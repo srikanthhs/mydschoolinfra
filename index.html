@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>School Infra — Mayiladuthurai</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Display:wght@400;500;700&family=Roboto:wght@300;400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=swap" rel="stylesheet">
+<style>
+:root{
+  --md-primary:#1A73E8;
+  --md-primary-container:#D2E3FC;
+  --md-on-primary:#fff;
+  --md-on-primary-container:#0842A0;
+  --md-secondary:#0F9D58;
+  --md-secondary-container:#CEEAD6;
+  --md-on-secondary-container:#0D652D;
+  --md-error:#B3261E;
+  --md-error-container:#F9DEDC;
+  --md-on-error-container:#410E0B;
+  --md-surface:#F8F9FA;
+  --md-surface1:#EEF3FC;
+  --md-surface2:#E4EDFC;
+  --md-on-surface:#202124;
+  --md-on-surface-variant:#444746;
+  --md-outline:#747775;
+  --md-outline-variant:#C4C7C5;
+  --md-bg:#F1F3F4;
+  --md-nav-bg:#fff;
+  --md-card:#fff;
+  --md-ripple:rgba(26,115,232,0.12);
+  --md-state-layer:rgba(32,33,36,0.08);
+  --warn-container:#FEF3E2;
+  --warn-on:#E37400;
+  --crit-container:#FCE8E6;
+  --crit-on:#B3261E;
+  --med-container:#FEF9E7;
+  --med-on:#F9A825;
+  --low-container:#E6F4EA;
+  --low-on:#0F9D58;
+  --fixed-container:#E8F0FE;
+  --fixed-on:#1A73E8;
+  --elev1:0 1px 2px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.08);
+  --elev2:0 2px 6px rgba(0,0,0,.1),0 1px 4px rgba(0,0,0,.08);
+  --elev3:0 4px 12px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Roboto',sans-serif;background:var(--md-bg);color:var(--md-on-surface);min-height:100vh;overflow-x:hidden}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';-webkit-font-smoothing:antialiased;user-select:none}
+.icon-sm{font-size:18px}.icon-lg{font-size:28px}.icon-xl{font-size:36px}
+
+/* TOP APP BAR */
+.top-bar{position:sticky;top:0;z-index:100;background:var(--md-nav-bg);box-shadow:var(--elev1)}
+.top-bar-inner{display:flex;align-items:center;padding:0 4px;height:64px;gap:4px}
+.top-bar-icon-btn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:transparent;color:var(--md-on-surface);position:relative;overflow:hidden;flex-shrink:0}
+.top-bar-icon-btn:hover{background:var(--md-state-layer)}
+.top-bar-title{flex:1;padding:0 8px}
+.top-bar-title h1{font-family:'Google Sans Display',sans-serif;font-size:22px;font-weight:500;color:var(--md-on-surface);line-height:1}
+.top-bar-title p{font-size:12px;color:var(--md-on-surface-variant);margin-top:1px}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:80px;background:var(--md-nav-bg);box-shadow:0 -1px 0 var(--md-outline-variant);z-index:100;display:flex;align-items:stretch;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:none;background:transparent;color:var(--md-on-surface-variant);gap:4px;padding:12px 0 8px;position:relative;overflow:hidden;transition:color 0.2s}
+.nav-item.active{color:var(--md-primary)}
+.nav-indicator{width:64px;height:32px;border-radius:16px;background:transparent;display:flex;align-items:center;justify-content:center;transition:background 0.2s;position:relative}
+.nav-item.active .nav-indicator{background:var(--md-primary-container)}
+.nav-badge{position:absolute;top:2px;right:8px;background:var(--md-error);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.nav-label{font-size:12px;font-weight:500;font-family:'Google Sans',sans-serif}
+
+/* PAGES */
+.page{display:none;padding:16px 16px 100px;animation:fadeUp 0.25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* SUMMARY CHIPS SCROLL */
+.chips-scroll{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips-scroll::-webkit-scrollbar{display:none}
+.chip-filter{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:14px;font-family:'Google Sans',sans-serif;font-weight:500;border:1.5px solid var(--md-outline-variant);background:#fff;color:var(--md-on-surface-variant);cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
+.chip-filter.active{border-color:var(--md-primary);background:var(--md-primary-container);color:var(--md-on-primary-container)}
+.chip-filter .material-symbols-rounded{font-size:16px}
+
+/* METRIC CARDS */
+.metric-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.metric-card{background:#fff;border-radius:16px;padding:16px;box-shadow:var(--elev1)}
+.metric-num{font-family:'Google Sans Display',sans-serif;font-size:32px;font-weight:700;line-height:1;letter-spacing:-1px}
+.metric-label{font-size:13px;color:var(--md-on-surface-variant);margin-top:4px;font-family:'Google Sans',sans-serif}
+.metric-trend{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:12px;font-weight:500}
+.m-critical .metric-num{color:var(--md-error)}
+.m-pending .metric-num{color:var(--warn-on)}
+.m-fixed .metric-num{color:var(--md-secondary)}
+.m-cost .metric-num{color:var(--md-primary)}
+
+/* SECTION HEADER */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px}
+.section-hdr h2{font-family:'Google Sans',sans-serif;font-size:16px;font-weight:700;color:var(--md-on-surface)}
+.text-btn{background:none;border:none;color:var(--md-primary);font-size:14px;font-weight:500;font-family:'Google Sans',sans-serif;cursor:pointer;padding:4px 0}
+
+/* ISSUE CARDS */
+.issue-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:var(--elev1);position:relative;overflow:hidden}
+.issue-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.issue-card.p-critical::before{background:var(--md-error)}
+.issue-card.p-high::before{background:var(--warn-on)}
+.issue-card.p-medium::before{background:var(--med-on)}
+.issue-card.p-low::before{background:var(--md-secondary)}
+.issue-header{display:flex;align-items:flex-start;gap:12px;padding-left:8px}
+.issue-avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.issue-info{flex:1;min-width:0}
+.issue-type-label{font-family:'Google Sans',sans-serif;font-size:15px;font-weight:700;color:var(--md-on-surface)}
+.issue-school-name{font-size:13px;color:var(--md-on-surface-variant);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.issue-desc{font-size:13px;color:#5F6368;margin:10px 8px 0;line-height:1.6}
+.issue-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-left:8px;flex-wrap:wrap;gap:8px}
+.issue-meta-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.status-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:'Google Sans',sans-serif}
+.sc-reported{background:var(--md-primary-container);color:var(--md-on-primary-container)}
+.sc-assigned{background:#F3E8FD;color:#6200EE}
+.sc-inprogress{background:var(--warn-container);color:var(--warn-on)}
+.sc-fixed{background:var(--md-secondary-container);color:var(--md-on-secondary-container)}
+.priority-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:700;font-family:'Google Sans',sans-serif;letter-spacing:0.3px}
+.pc-critical{background:var(--crit-container);color:var(--crit-on)}
+.pc-high{background:var(--warn-container);color:var(--warn-on)}
+.pc-medium{background:var(--med-container);color:var(--med-on)}
+.pc-low{background:var(--low-container);color:var(--low-on)}
+
+/* ADVANCE BUTTON */
+.advance-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;font-family:'Google Sans',sans-serif;border:none;cursor:pointer;transition:all 0.15s;background:var(--md-primary);color:#fff}
+.advance-btn:hover{box-shadow:var(--elev2)}
+.advance-btn.done{background:var(--md-secondary-container);color:var(--md-on-secondary-container);cursor:default}
+
+/* BLOCK CARDS */
+.block-scroll{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.block-scroll::-webkit-scrollbar{display:none}
+.block-card{background:#fff;border-radius:16px;padding:14px 16px;min-width:140px;flex-shrink:0;box-shadow:var(--elev1);cursor:pointer;border:2px solid transparent;transition:all 0.2s}
+.block-card.active{border-color:var(--md-primary);background:var(--md-surface1)}
+.block-card-name{font-family:'Google Sans',sans-serif;font-size:14px;font-weight:600;color:var(--md-on-surface);margin-bottom:10px}
+.block-stats-row{display:flex;gap:10px}
+.bs{text-align:center}
+.bs-num{font-family:'Google Sans Display',sans-serif;font-size:20px;font-weight:700}
+.bs-lbl{font-size:10px;color:var(--md-on-surface-variant);margin-top:1px}
+
+/* SEARCH BAR */
+.search-bar{display:flex;align-items:center;gap:12px;background:#fff;border-radius:28px;padding:0 16px;height:52px;box-shadow:var(--elev2);margin-bottom:16px}
+.search-bar input{flex:1;border:none;outline:none;font-size:16px;font-family:'Roboto',sans-serif;color:var(--md-on-surface);background:transparent}
+.search-bar input::placeholder{color:var(--md-on-surface-variant)}
+.search-bar .material-symbols-rounded{color:var(--md-on-surface-variant)}
+
+/* FORM STYLES */
+.form-section{background:#fff;border-radius:20px;padding:20px;margin-bottom:12px;box-shadow:var(--elev1)}
+.form-section-title{font-family:'Google Sans',sans-serif;font-size:16px;font-weight:700;color:var(--md-on-surface);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.form-section-title .material-symbols-rounded{color:var(--md-primary);font-size:20px}
+.md-field{margin-bottom:16px}
+.md-field:last-child{margin-bottom:0}
+.md-label{font-size:12px;font-weight:500;color:var(--md-on-surface-variant);margin-bottom:6px;display:block;font-family:'Google Sans',sans-serif;letter-spacing:0.3px}
+.md-input{width:100%;background:var(--md-bg);border:1.5px solid var(--md-outline-variant);border-radius:12px;padding:14px 16px;font-size:16px;color:var(--md-on-surface);font-family:'Roboto',sans-serif;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.md-input:focus{border-color:var(--md-primary);background:#fff}
+.md-input::placeholder{color:var(--md-on-surface-variant)}
+select.md-input{cursor:pointer}
+textarea.md-input{resize:none;min-height:100px;line-height:1.6}
+
+/* ISSUE TYPE GRID */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.type-btn{background:var(--md-bg);border:1.5px solid var(--md-outline-variant);border-radius:16px;padding:14px 8px;text-align:center;cursor:pointer;transition:all 0.2s;font-family:'Roboto',sans-serif;-webkit-appearance:none;border:1.5px solid var(--md-outline-variant)}
+.type-btn:active{transform:scale(0.96)}
+.type-btn.sel{background:var(--md-primary-container);border-color:var(--md-primary)}
+.type-btn .t-emo{font-size:26px;display:block;margin-bottom:6px}
+.type-btn .t-lbl{font-size:11px;color:var(--md-on-surface-variant);font-weight:500;line-height:1.3}
+.type-btn.sel .t-lbl{color:var(--md-on-primary-container);font-weight:700}
+
+/* PRIORITY BTNS */
+.priority-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pri-btn{padding:14px 12px;border-radius:16px;cursor:pointer;text-align:left;font-family:'Google Sans',sans-serif;border:1.5px solid var(--md-outline-variant);background:var(--md-bg);transition:all 0.2s}
+.pri-btn.sel{border-width:2px}
+.pri-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.pri-desc{font-size:11px;margin-top:3px;opacity:0.8}
+.pri-critical{}.pri-critical.sel{background:var(--crit-container);border-color:var(--md-error)}
+.pri-critical .pri-title{color:var(--md-error)}
+.pri-high.sel{background:var(--warn-container);border-color:var(--warn-on)}
+.pri-high .pri-title{color:var(--warn-on)}
+.pri-medium.sel{background:var(--med-container);border-color:var(--med-on)}
+.pri-medium .pri-title{color:var(--med-on)}
+.pri-low.sel{background:var(--low-container);border-color:var(--md-secondary)}
+.pri-low .pri-title{color:var(--md-secondary)}
+
+/* PHOTO UPLOAD */
+.photo-upload{border:2px dashed var(--md-outline-variant);border-radius:16px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--md-bg)}
+.photo-upload:active{background:var(--md-primary-container);border-color:var(--md-primary)}
+.photo-upload input{display:none}
+.photo-upload p{font-size:14px;color:var(--md-on-surface-variant);margin-top:8px}
+.photo-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.photo-preview img{width:64px;height:64px;border-radius:12px;object-fit:cover;border:2px solid var(--md-outline-variant)}
+
+/* FAB */
+.fab{position:fixed;bottom:92px;right:16px;background:var(--md-primary-container);color:var(--md-on-primary-container);border:none;border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:12px;font-family:'Google Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:var(--elev3);z-index:99;transition:all 0.2s}
+.fab:active{transform:scale(0.96)}
+
+/* SUBMIT BTN */
+.submit-btn{width:100%;padding:16px;background:var(--md-primary);color:#fff;font-size:16px;font-weight:700;border:none;border-radius:100px;cursor:pointer;font-family:'Google Sans',sans-serif;box-shadow:var(--elev2);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:0.3px}
+.submit-btn:active{transform:scale(0.98);box-shadow:var(--elev1)}
+
+/* SNACKBAR */
+.snackbar{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(80px);background:#323232;color:#fff;padding:14px 20px;border-radius:8px;font-size:14px;font-family:'Roboto',sans-serif;z-index:999;opacity:0;transition:all 0.3s;white-space:nowrap;box-shadow:var(--elev3)}
+.snackbar.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 24px;background:#fff;border-radius:20px;box-shadow:var(--elev1)}
+.empty-state .material-symbols-rounded{font-size:64px;color:var(--md-outline-variant);display:block;margin-bottom:16px}
+.empty-state h3{font-family:'Google Sans',sans-serif;font-size:18px;font-weight:700;color:var(--md-on-surface);margin-bottom:8px}
+.empty-state p{font-size:14px;color:var(--md-on-surface-variant)}
+
+/* COST BADGE */
+.cost-badge{font-size:12px;font-weight:700;color:var(--md-primary);font-family:'Google Sans',sans-serif}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--md-outline-variant);margin:12px 0}
+.page-sub{font-size:13px;color:var(--md-on-surface-variant);margin-bottom:16px}
+.udise-chip{background:var(--md-bg);border:1px solid var(--md-outline-variant);border-radius:8px;padding:2px 8px;font-size:11px;color:var(--md-on-surface-variant);font-family:'Roboto Mono',monospace;display:inline-block}
+.reporter-line{font-size:12px;color:var(--md-on-surface-variant);display:flex;align-items:center;gap:4px;margin-top:6px}
+.reporter-line .material-symbols-rounded{font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- TOP APP BAR -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div style="display:flex;align-items:center;gap:8px;padding:0 8px;flex:1">
+      <div style="width:36px;height:36px;background:var(--md-primary);border-radius:10px;display:flex;align-items:center;justify-content:center">
+        <span class="material-symbols-rounded" style="color:#fff;font-size:20px">school</span>
+      </div>
+      <div>
+        <div style="font-family:'Google Sans Display',sans-serif;font-size:18px;font-weight:700;color:var(--md-on-surface);line-height:1.2">School Infra</div>
+        <div style="font-size:11px;color:var(--md-on-surface-variant)">Mayiladuthurai District</div>
+      </div>
+    </div>
+    <button class="top-bar-icon-btn" id="filter-btn">
+      <span class="material-symbols-rounded">tune</span>
+    </button>
+    <button class="top-bar-icon-btn">
+      <span class="material-symbols-rounded">notifications</span>
+    </button>
+  </div>
+</div>
+
+<!-- PAGE: DASHBOARD -->
+<div class="page active" id="page-home">
+  <!-- Search -->
+  <div style="height:16px"></div>
+  <div class="search-bar">
+    <span class="material-symbols-rounded">search</span>
+    <input type="text" id="search-inp" placeholder="Search school, issue type..." oninput="renderHome()">
+    <span class="material-symbols-rounded" style="font-size:18px">mic</span>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metric-row" id="metric-row"></div>
+
+  <!-- Block filter -->
+  <div class="section-hdr" style="margin-top:4px">
+    <h2>Blocks</h2>
+    <button class="text-btn" onclick="clearBlockFilter()">All</button>
+  </div>
+  <div class="block-scroll" id="block-scroll"></div>
+
+  <!-- Chips -->
+  <div class="chips-scroll" id="chips-row"></div>
+
+  <!-- Issues -->
+  <div class="section-hdr">
+    <h2 id="issues-heading">All Issues</h2>
+    <button class="text-btn" id="sort-btn" onclick="toggleSort()">↓ Priority</button>
+  </div>
+  <div id="issues-list"></div>
+</div>
+
+<!-- PAGE: REPORT -->
+<div class="page" id="page-report">
+  <div style="height:16px"></div>
+  <div style="font-family:'Google Sans Display',sans-serif;font-size:24px;font-weight:700;margin-bottom:4px">Report an Issue</div>
+  <p class="page-sub">Fill the form to flag infrastructure gaps for immediate action.</p>
+
+  <div class="form-section">
+    <div class="form-section-title"><span class="material-symbols-rounded">location_on</span>School Details</div>
+    <div class="md-field">
+      <label class="md-label">BLOCK</label>
+      <select class="md-input" id="f-block" onchange="populateSchools()">
+        <option value="">Select block</option>
+        <option>Mayiladuthurai</option><option>Sirkali</option><option>Kuthalam</option>
+        <option>Tharangambadi</option><option>Kollidam</option>
+      </select>
+    </div>
+    <div class="md-field">
+      <label class="md-label">SCHOOL NAME</label>
+      <select class="md-input" id="f-school" onchange="setUDISE()"><option value="">Select block first</option></select>
+    </div>
+    <div class="md-field">
+      <label class="md-label">UDISE CODE</label>
+      <input class="md-input" id="f-udise" readonly placeholder="Auto-filled" style="color:var(--md-on-surface-variant)">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><span class="material-symbols-rounded">person</span>Reported By</div>
+    <div class="md-field">
+      <label class="md-label">YOUR NAME</label>
+      <input class="md-input" id="f-name" type="text" placeholder="Headmaster / Teacher name">
+    </div>
+    <div class="md-field">
+      <label class="md-label">MOBILE NUMBER</label>
+      <input class="md-input" id="f-mobile" type="tel" placeholder="10-digit mobile">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><span class="material-symbols-rounded">category</span>Issue Type</div>
+    <div class="type-grid" id="type-grid">
+      <button class="type-btn" onclick="selType(this,'Toilet')"><span class="t-emo">🚽</span><span class="t-lbl">Toilet / Urinal</span></button>
+      <button class="type-btn" onclick="selType(this,'Classroom')"><span class="t-emo">🏫</span><span class="t-lbl">Classroom</span></button>
+      <button class="type-btn" onclick="selType(this,'Roof')"><span class="t-emo">🏚️</span><span class="t-lbl">Roof / Structure</span></button>
+      <button class="type-btn" onclick="selType(this,'Water')"><span class="t-emo">💧</span><span class="t-lbl">Drinking Water</span></button>
+      <button class="type-btn" onclick="selType(this,'Electrical')"><span class="t-emo">⚡</span><span class="t-lbl">Electrical</span></button>
+      <button class="type-btn" onclick="selType(this,'Ramp')"><span class="t-emo">♿</span><span class="t-lbl">Ramp / Access</span></button>
+      <button class="type-btn" onclick="selType(this,'Compound')"><span class="t-emo">🧱</span><span class="t-lbl">Compound Wall</span></button>
+      <button class="type-btn" onclick="selType(this,'Furniture')"><span class="t-emo">🪑</span><span class="t-lbl">Furniture</span></button>
+      <button class="type-btn" onclick="selType(this,'Kitchen')"><span class="t-emo">🍳</span><span class="t-lbl">Kitchen / MDM</span></button>
+      <button class="type-btn" onclick="selType(this,'Door/Window')"><span class="t-emo">🪟</span><span class="t-lbl">Door / Window</span></button>
+      <button class="type-btn" onclick="selType(this,'Flooring')"><span class="t-emo">🪵</span><span class="t-lbl">Flooring</span></button>
+      <button class="type-btn" onclick="selType(this,'Drainage')"><span class="t-emo">🌊</span><span class="t-lbl">Drainage</span></button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><span class="material-symbols-rounded">priority_high</span>Priority & Details</div>
+    <div class="priority-grid" style="margin-bottom:16px">
+      <button class="pri-btn pri-critical" onclick="selPri(this,'Critical')"><div class="pri-title">🔴 Critical</div><div class="pri-desc">Health or safety risk</div></button>
+      <button class="pri-btn pri-high" onclick="selPri(this,'High')"><div class="pri-title">🟠 High</div><div class="pri-desc">Major disruption</div></button>
+      <button class="pri-btn pri-medium" onclick="selPri(this,'Medium')"><div class="pri-title">🟡 Medium</div><div class="pri-desc">Moderate impact</div></button>
+      <button class="pri-btn pri-low" onclick="selPri(this,'Low')"><div class="pri-title">🟢 Low</div><div class="pri-desc">Minor issue</div></button>
+    </div>
+    <div class="md-field">
+      <label class="md-label">DESCRIPTION</label>
+      <textarea class="md-input" id="f-desc" placeholder="Describe the issue — location, how long, students affected..."></textarea>
+    </div>
+    <div class="md-field">
+      <label class="md-label">ESTIMATED COST TO FIX (₹)</label>
+      <input class="md-input" id="f-cost" type="number" placeholder="e.g. 25000">
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><span class="material-symbols-rounded">photo_camera</span>Photo Evidence</div>
+    <div class="photo-upload" onclick="document.getElementById('photo-inp').click()">
+      <input type="file" id="photo-inp" accept="image/*" multiple onchange="handlePhotos(event)">
+      <span class="material-symbols-rounded icon-xl" style="color:var(--md-primary);display:block;margin:0 auto">add_a_photo</span>
+      <p>Tap to attach photos</p>
+    </div>
+    <div class="photo-preview" id="photo-preview"></div>
+  </div>
+
+  <button class="submit-btn" onclick="submitReport()">
+    <span class="material-symbols-rounded">send</span>
+    Submit Report
+  </button>
+  <div style="height:12px"></div>
+</div>
+
+<!-- PAGE: ANALYTICS -->
+<div class="page" id="page-analytics">
+  <div style="height:16px"></div>
+  <div style="font-family:'Google Sans Display',sans-serif;font-size:24px;font-weight:700;margin-bottom:4px">Analytics</div>
+  <p class="page-sub">District-wide infrastructure gap overview</p>
+  <div id="analytics-content"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" id="nav-home" onclick="switchPage('home')">
+    <div class="nav-indicator"><span class="material-symbols-rounded">home</span><span class="nav-badge" id="badge-home" style="display:none"></span></div>
+    <span class="nav-label">Home</span>
+  </button>
+  <button class="nav-item" id="nav-report" onclick="switchPage('report')">
+    <div class="nav-indicator"><span class="material-symbols-rounded">add_circle</span></div>
+    <span class="nav-label">Report</span>
+  </button>
+  <button class="nav-item" id="nav-analytics" onclick="switchPage('analytics')">
+    <div class="nav-indicator"><span class="material-symbols-rounded">bar_chart</span></div>
+    <span class="nav-label">Analytics</span>
+  </button>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+
+<script>
+const BLOCKS={
+  "Mayiladuthurai":[{name:"PUMS Sembanarkoil",u:"33130200101"},{name:"GHS Porayar",u:"33130200205"},{name:"GHSS Mayiladuthurai",u:"33130200312"},{name:"PUMS Athiyur",u:"33130200418"},{name:"GHS Koradacheri",u:"33130200522"},{name:"PUMS Anaikuppam",u:"33130200631"},{name:"GHSS Girls Mayiladuthurai",u:"33130200744"},{name:"GHS Karuvelankudi",u:"33130200856"},{name:"PUMS Vaitheeswarankoil",u:"33130200967"},{name:"GHS Thirukadaiyur",u:"33130201073"}],
+  "Sirkali":[{name:"GHSS Sirkali",u:"33130300101"},{name:"PUMS Azhiyur",u:"33130300214"},{name:"GHS Sirkazhi Boys",u:"33130300325"},{name:"PUMS Kolathur",u:"33130300437"},{name:"GHS Velankanni",u:"33130300548"},{name:"PUMS Chithamur",u:"33130300652"},{name:"GHSS Girls Sirkali",u:"33130300763"},{name:"GHS Poompuhar",u:"33130300871"},{name:"PUMS Keeranur",u:"33130300985"},{name:"GHS Sirkazhi Ezhilnagar",u:"33130301092"}],
+  "Kuthalam":[{name:"GHSS Kuthalam",u:"33130400101"},{name:"PUMS Papanasam",u:"33130400215"},{name:"GHS Thirucherai",u:"33130400322"},{name:"PUMS Thalainayar",u:"33130400433"},{name:"GHS Kilvelur",u:"33130400547"},{name:"PUMS Manali",u:"33130400651"},{name:"GHSS Girls Kuthalam",u:"33130400764"},{name:"GHS Tiruvenkadu",u:"33130400875"},{name:"PUMS Neivasal",u:"33130400988"},{name:"GHS Sembanarkoil",u:"33130401094"}],
+  "Tharangambadi":[{name:"GHSS Tharangambadi",u:"33130500101"},{name:"PUMS Karaikal Road",u:"33130500213"},{name:"GHS Samathuvapuram",u:"33130500324"},{name:"PUMS Sirkazhi Colony",u:"33130500436"},{name:"GHS Thiruppanandal",u:"33130500541"},{name:"PUMS Akaraipettai",u:"33130500655"},{name:"GHSS Girls Tharangambadi",u:"33130500762"},{name:"GHS Kollidam East",u:"33130500873"},{name:"PUMS Manjakollai",u:"33130500987"},{name:"GHS Poombuhar Nagar",u:"33130501091"}],
+  "Kollidam":[{name:"GHSS Kollidam",u:"33130600101"},{name:"PUMS Sirkazhi North",u:"33130600218"},{name:"GHS Pudupattinam",u:"33130600323"},{name:"PUMS Mutheliamman Nagar",u:"33130600434"},{name:"GHS Kuthiraimozhi",u:"33130600549"},{name:"PUMS Thillai Nagar",u:"33130600652"},{name:"GHSS Girls Kollidam",u:"33130600761"},{name:"GHS Thirumullaivasal",u:"33130600878"},{name:"PUMS Vetriyur",u:"33130600983"},{name:"GHS Kollidam South",u:"33130601097"}]
+};
+const EMOS={Toilet:"🚽",Classroom:"🏫",Roof:"🏚️",Water:"💧",Electrical:"⚡",Ramp:"♿",Compound:"🧱",Furniture:"🪑",Kitchen:"🍳","Door/Window":"🪟",Flooring:"🪵",Drainage:"🌊"};
+const AVATARBG={Toilet:"#E8F0FE",Classroom:"#F3E8FD",Roof:"#FEF3E2",Water:"#E6F7FF",Electrical:"#FFF8E1",Ramp:"#E6F4EA",Compound:"#F1F3F4","Door/Window":"#FEF3E2",Furniture:"#FCE4EC",Kitchen:"#E0F7FA",Flooring:"#FBE9E7",Drainage:"#E0F7FA"};
+
+let selType_='', selPri_='', photoURLs=[], activeBlock='', sortMode='priority', activeStatus='';
+
+function load(){return JSON.parse(localStorage.getItem('myl_infra')||'[]')}
+function save(d){localStorage.setItem('myl_infra',JSON.stringify(d))}
+
+function seed(){
+  if(load().length)return;
+  save([
+    {id:1,block:"Mayiladuthurai",school:"GHSS Mayiladuthurai",udise:"33130200312",type:"Toilet",priority:"Critical",status:"Reported",desc:"Girls toilet block — 3 of 5 units broken. Door hinges missing. No water connection since 2 weeks. 180 girl students affected.",reporter:"P. Selvakumar",mobile:"9443201234",cost:45000,date:"2024-04-08T09:15:00",photos:[]},
+    {id:2,block:"Sirkali",school:"GHSS Sirkali",udise:"33130300101",type:"Roof",priority:"Critical",status:"Assigned",desc:"Middle block roof slab cracked. Rain water leaking into classrooms 6 and 7. Risk of collapse during monsoon. Immediate shoring required.",reporter:"M. Radhakrishnan",mobile:"9865432100",cost:180000,date:"2024-04-07T14:30:00",photos:[]},
+    {id:3,block:"Kuthalam",school:"GHSS Kuthalam",udise:"33130400101",type:"Water",priority:"High",status:"In Progress",desc:"Overhead tank pump motor burnt. Students fetching water from 200m away. 340 students affected. TWAD motor replacement in progress.",reporter:"S. Devi",mobile:"9543210876",cost:12000,date:"2024-04-06T11:00:00",photos:[]},
+    {id:4,block:"Tharangambadi",school:"GHSS Tharangambadi",udise:"33130500101",type:"Classroom",priority:"High",status:"Reported",desc:"Two classrooms demolished for new block in 2022. New block incomplete. Std 9 and 10 sharing single room. 78 students affected.",reporter:"K. Arulmozhi",mobile:"9344561234",cost:350000,date:"2024-04-05T10:45:00",photos:[]},
+    {id:5,block:"Kollidam",school:"GHSS Kollidam",udise:"33130600101",type:"Electrical",priority:"High",status:"Reported",desc:"Main DB sparking. Three classrooms without power. Fans not working in 40°C heat. Full rewiring needed.",reporter:"V. Sundararajan",mobile:"9443098765",cost:65000,date:"2024-04-04T16:20:00",photos:[]},
+    {id:6,block:"Mayiladuthurai",school:"GHS Koradacheri",udise:"33130200522",type:"Ramp",priority:"Medium",status:"Fixed",desc:"Wheelchair ramp repaired. Two differently-abled students can now access classrooms independently.",reporter:"T. Meenakshi",mobile:"9865123456",cost:8000,date:"2024-04-03T09:00:00",photos:[]},
+    {id:7,block:"Sirkali",school:"GHS Poompuhar",udise:"33130300871",type:"Furniture",priority:"Medium",status:"Reported",desc:"42 wooden benches broken. Students sitting on floor in classes 6-8. PWD furniture indent raised.",reporter:"R. Baskaran",mobile:"9944321098",cost:42000,date:"2024-04-02T13:15:00",photos:[]},
+    {id:8,block:"Kuthalam",school:"GHS Kilvelur",udise:"33130400547",type:"Compound",priority:"Medium",status:"Assigned",desc:"North wall 30m section collapsed. Stray cattle entering. DRDA estimate approved, work to begin.",reporter:"P. Lakshmi",mobile:"9843201567",cost:95000,date:"2024-04-01T15:30:00",photos:[]},
+    {id:9,block:"Tharangambadi",school:"GHS Thiruppanandal",udise:"33130500541",type:"Kitchen",priority:"Low",status:"In Progress",desc:"MDM kitchen chimney broken. Smoke entering adjacent classroom. New chimney ordered from PWD store.",reporter:"A. Vijayalakshmi",mobile:"9486012345",cost:4500,date:"2024-03-30T10:00:00",photos:[]},
+    {id:10,block:"Kollidam",school:"GHS Thirumullaivasal",udise:"33130600878",type:"Drainage",priority:"High",status:"Reported",desc:"Campus drainage blocked. Stagnant water near primary block. Dengue breeding risk. 280 students affected.",reporter:"N. Subramanian",mobile:"9786543210",cost:22000,date:"2024-03-29T14:00:00",photos:[]}
+  ]);
+}
+
+function populateSchools(){
+  const b=document.getElementById('f-block').value;
+  const sel=document.getElementById('f-school');
+  sel.innerHTML='<option value="">Select school</option>';
+  document.getElementById('f-udise').value='';
+  if(BLOCKS[b])BLOCKS[b].forEach(s=>{
+    const o=document.createElement('option');o.value=s.name;o.dataset.u=s.u;o.textContent=s.name;sel.appendChild(o);
+  });
+}
+function setUDISE(){
+  const sel=document.getElementById('f-school');
+  const opt=sel.options[sel.selectedIndex];
+  document.getElementById('f-udise').value=opt?opt.dataset.u||'':'';
+}
+function selType(btn,t){document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selType_=t;}
+function selPri(btn,p){document.querySelectorAll('.pri-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selPri_=p;}
+function handlePhotos(e){
+  photoURLs=[];const pv=document.getElementById('photo-preview');pv.innerHTML='';
+  [...e.target.files].slice(0,3).forEach(f=>{
+    const r=new FileReader();r.onload=ev=>{photoURLs.push(ev.target.result);const img=new Image();img.src=ev.target.result;pv.appendChild(img);};r.readAsDataURL(f);
+  });
+}
+
+function snack(msg){
+  const s=document.getElementById('snackbar');s.textContent=msg;s.classList.add('show');
+  setTimeout(()=>s.classList.remove('show'),3000);
+}
+
+function submitReport(){
+  const b=document.getElementById('f-block').value,sc=document.getElementById('f-school').value;
+  const nm=document.getElementById('f-name').value.trim(),mb=document.getElementById('f-mobile').value.trim();
+  const ds=document.getElementById('f-desc').value.trim();
+  if(!b||!sc||!nm||!mb||!selType_||!selPri_||!ds){snack('⚠️ Please fill all fields');return;}
+  const d=load();const nid=d.length?Math.max(...d.map(r=>r.id))+1:1;
+  d.unshift({id:nid,block:b,school:sc,udise:document.getElementById('f-udise').value,type:selType_,priority:selPri_,status:'Reported',desc:ds,reporter:nm,mobile:mb,cost:Number(document.getElementById('f-cost').value)||0,date:new Date().toISOString(),photos:photoURLs.slice(0,1)});
+  save(d);
+  ['f-block','f-school','f-name','f-mobile','f-desc','f-cost'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('f-udise').value='';document.getElementById('photo-preview').innerHTML='';
+  document.querySelectorAll('.type-btn,.pri-btn').forEach(b=>b.classList.remove('sel'));
+  selType_='';selPri_='';photoURLs=[];
+  snack('✅ Issue reported successfully!');
+  switchPage('home');
+}
+
+function advance(id){
+  const order=['Reported','Assigned','In Progress','Fixed'];
+  const d=load();const r=d.find(x=>x.id===id);if(!r)return;
+  const i=order.indexOf(r.status);if(i<order.length-1)r.status=order[i+1];
+  save(d);renderHome();snack('Status updated → '+r.status);
+}
+
+function clearBlockFilter(){activeBlock='';renderHome();}
+function toggleSort(){sortMode=sortMode==='priority'?'date':'priority';document.getElementById('sort-btn').textContent=sortMode==='priority'?'↓ Priority':'↓ Date';renderHome();}
+
+function renderHome(){
+  const data=load();
+  const total=data.length,critical=data.filter(r=>r.priority==='Critical'&&r.status!=='Fixed').length;
+  const fixed=data.filter(r=>r.status==='Fixed').length;
+  const cost=data.filter(r=>r.status!=='Fixed').reduce((a,r)=>a+(r.cost||0),0);
+
+  document.getElementById('metric-row').innerHTML=`
+    <div class="metric-card m-critical"><div class="metric-num">${critical}</div><div class="metric-label">Critical Active</div><div class="metric-trend" style="color:var(--md-error)"><span class="material-symbols-rounded icon-sm">warning</span>Immediate action</div></div>
+    <div class="metric-card m-pending"><div class="metric-num">${total-fixed}</div><div class="metric-label">Pending Issues</div><div class="metric-trend" style="color:var(--warn-on)"><span class="material-symbols-rounded icon-sm">hourglass_top</span>${total} total</div></div>
+    <div class="metric-card m-fixed"><div class="metric-num">${fixed}</div><div class="metric-label">Fixed</div><div class="metric-trend" style="color:var(--md-secondary)"><span class="material-symbols-rounded icon-sm">check_circle</span>${total?Math.round(fixed/total*100):0}% rate</div></div>
+    <div class="metric-card m-cost"><div class="metric-num">₹${cost>=100000?(cost/100000).toFixed(1)+'L':cost>=1000?Math.round(cost/1000)+'K':cost}</div><div class="metric-label">Est. Pending Cost</div><div class="metric-trend" style="color:var(--md-primary)"><span class="material-symbols-rounded icon-sm">currency_rupee</span>To be released</div></div>
+  `;
+
+  // Badge
+  const badge=document.getElementById('badge-home');
+  if(critical>0){badge.style.display='flex';badge.textContent=critical;}else{badge.style.display='none';}
+
+  // Blocks
+  const blocks=Object.keys(BLOCKS);
+  document.getElementById('block-scroll').innerHTML=blocks.map(b=>{
+    const br=data.filter(r=>r.block===b);
+    const bc=br.filter(r=>r.priority==='Critical'&&r.status!=='Fixed').length;
+    const bf=br.filter(r=>r.status==='Fixed').length;
+    return`<div class="block-card ${activeBlock===b?'active':''}" onclick="setBlock('${b}')">
+      <div class="block-card-name">📍 ${b}</div>
+      <div class="block-stats-row">
+        <div class="bs"><div class="bs-num" style="color:var(--md-primary)">${br.length}</div><div class="bs-lbl">Total</div></div>
+        <div class="bs"><div class="bs-num" style="color:var(--md-error)">${bc}</div><div class="bs-lbl">Critical</div></div>
+        <div class="bs"><div class="bs-num" style="color:var(--md-secondary)">${bf}</div><div class="bs-lbl">Fixed</div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Status chips
+  const statuses=['All','Reported','Assigned','In Progress','Fixed'];
+  document.getElementById('chips-row').innerHTML=statuses.map(s=>`
+    <div class="chip-filter ${activeStatus===s||(!activeStatus&&s==='All')?'active':''}" onclick="setStatus('${s}')">
+      ${s==='All'?'<span class="material-symbols-rounded">filter_list</span>':''} ${s}
+    </div>`).join('');
+
+  // Filter & sort
+  const q=document.getElementById('search-inp').value.toLowerCase();
+  const priOrder={Critical:0,High:1,Medium:2,Low:3};
+  let filtered=data.filter(r=>{
+    const bm=!activeBlock||r.block===activeBlock;
+    const sm=!activeStatus||activeStatus==='All'||r.status===activeStatus;
+    const qm=!q||r.school.toLowerCase().includes(q)||r.type.toLowerCase().includes(q)||r.block.toLowerCase().includes(q)||r.desc.toLowerCase().includes(q);
+    return bm&&sm&&qm;
+  });
+  if(sortMode==='priority'){
+    filtered.sort((a,b)=>{
+      if(a.status==='Fixed'&&b.status!=='Fixed')return 1;
+      if(b.status==='Fixed'&&a.status!=='Fixed')return -1;
+      return priOrder[a.priority]-priOrder[b.priority];
+    });
+  } else {
+    filtered.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  }
+
+  document.getElementById('issues-heading').textContent=activeBlock?`${activeBlock} Issues`:`All Issues`;
+  document.getElementById('issues-heading').insertAdjacentHTML('afterend',`<span style="display:none"></span>`);
+
+  const nextLabel={'Reported':'Assign','Assigned':'Start Fix','In Progress':'Mark Fixed','Fixed':''};
+  const nextIcon={'Reported':'assignment_ind','Assigned':'construction','In Progress':'check_circle',Fixed:''};
+  const scClass={'Reported':'sc-reported','Assigned':'sc-assigned','In Progress':'sc-inprogress','Fixed':'sc-fixed'};
+  const pcClass={'Critical':'pc-critical','High':'pc-high','Medium':'pc-medium','Low':'pc-low'};
+  const pcPfx={'Critical':'p-critical','High':'p-high','Medium':'p-medium','Low':'p-low'};
+
+  if(!filtered.length){
+    document.getElementById('issues-list').innerHTML=`<div class="empty-state"><span class="material-symbols-rounded">task_alt</span><h3>No issues found</h3><p>Try changing your filters or search terms.</p></div>`;
+    return;
+  }
+
+  document.getElementById('issues-list').innerHTML=filtered.map(r=>{
+    const dt=new Date(r.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    const photoHtml=r.photos&&r.photos[0]?`<img src="${r.photos[0]}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:2px solid var(--md-outline-variant);flex-shrink:0">`:'' ;
+    return`<div class="issue-card p-${r.priority.toLowerCase()}">
+      <div class="issue-header">
+        <div class="issue-avatar" style="background:${AVATARBG[r.type]||'#F1F3F4'}">${EMOS[r.type]||'⚠️'}</div>
+        <div class="issue-info">
+          <div class="issue-type-label">${r.type} Issue</div>
+          <div class="issue-school-name">${r.school}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--md-on-surface-variant);display:flex;align-items:center;gap:2px"><span class="material-symbols-rounded icon-sm">location_on</span>${r.block}</span>
+            <span class="udise-chip">${r.udise||'—'}</span>
+          </div>
+        </div>
+        ${photoHtml}
+      </div>
+      <div class="issue-desc">${r.desc}</div>
+      <div class="reporter-line"><span class="material-symbols-rounded">person</span>${r.reporter} · ${r.mobile}${r.cost?` · <span style="color:var(--md-primary);font-weight:600">₹${r.cost.toLocaleString('en-IN')}</span>`:''}</div>
+      <div class="divider"></div>
+      <div class="issue-footer">
+        <div class="issue-meta-chips">
+          <span class="priority-chip ${pcClass[r.priority]}">${r.priority}</span>
+          <span class="status-chip ${scClass[r.status]}">${r.status}</span>
+          <span style="font-size:12px;color:var(--md-on-surface-variant)">${dt}</span>
+        </div>
+        ${r.status!=='Fixed'?`<button class="advance-btn" onclick="advance(${r.id})"><span class="material-symbols-rounded icon-sm">${nextIcon[r.status]}</span>${nextLabel[r.status]}</button>`:`<button class="advance-btn done"><span class="material-symbols-rounded icon-sm">verified</span>Resolved</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setBlock(b){activeBlock=activeBlock===b?'':b;renderHome();}
+function setStatus(s){activeStatus=s==='All'?'':s;renderHome();}
+
+function renderAnalytics(){
+  const data=load();
+  const byType={},byBlock={};
+  data.forEach(r=>{
+    byType[r.type]=(byType[r.type]||0)+1;
+    byBlock[r.block]=(byBlock[r.block]||0)+1;
+  });
+  const maxT=Math.max(...Object.values(byType),1);
+  const maxB=Math.max(...Object.values(byBlock),1);
+  const typeHTML=Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:14px;font-weight:500">${EMOS[t]||'⚠️'} ${t}</span>
+        <span style="font-size:14px;font-weight:700;color:var(--md-primary)">${c}</span>
+      </div>
+      <div style="background:var(--md-bg);border-radius:4px;height:8px"><div style="width:${(c/maxT*100).toFixed(0)}%;height:100%;background:var(--md-primary);border-radius:4px;transition:width 0.5s"></div></div>
+    </div>`).join('');
+  const blockHTML=Object.entries(byBlock).sort((a,b)=>b[1]-a[1]).map(([b,c])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:14px;font-weight:500">📍 ${b}</span>
+        <span style="font-size:14px;font-weight:700;color:var(--md-secondary)">${c}</span>
+      </div>
+      <div style="background:var(--md-bg);border-radius:4px;height:8px"><div style="width:${(c/maxB*100).toFixed(0)}%;height:100%;background:var(--md-secondary);border-radius:4px"></div></div>
+    </div>`).join('');
+
+  const fixed=data.filter(r=>r.status==='Fixed').length;
+  const inprog=data.filter(r=>r.status==='In Progress').length;
+  const assigned=data.filter(r=>r.status==='Assigned').length;
+  const reported=data.filter(r=>r.status==='Reported').length;
+
+  document.getElementById('analytics-content').innerHTML=`
+    <div class="form-section">
+      <div class="form-section-title"><span class="material-symbols-rounded">donut_large</span>Status Breakdown</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--crit-container);border-radius:14px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:700;color:var(--crit-on)">${reported}</div><div style="font-size:12px;color:var(--crit-on);margin-top:2px">Reported</div></div>
+        <div style="background:#F3E8FD;border-radius:14px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:700;color:#6200EE">${assigned}</div><div style="font-size:12px;color:#6200EE;margin-top:2px">Assigned</div></div>
+        <div style="background:var(--warn-container);border-radius:14px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:700;color:var(--warn-on)">${inprog}</div><div style="font-size:12px;color:var(--warn-on);margin-top:2px">In Progress</div></div>
+        <div style="background:var(--low-container);border-radius:14px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:700;color:var(--md-secondary)">${fixed}</div><div style="font-size:12px;color:var(--md-secondary);margin-top:2px">Fixed</div></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span class="material-symbols-rounded">category</span>Issues by Type</div>
+      ${typeHTML||'<p style="color:var(--md-on-surface-variant);font-size:14px">No data yet.</p>'}
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span class="material-symbols-rounded">map</span>Issues by Block</div>
+      ${blockHTML||'<p style="color:var(--md-on-surface-variant);font-size:14px">No data yet.</p>'}
+    </div>
+  `;
+}
+
+function switchPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  if(page==='home')renderHome();
+  if(page==='analytics')renderAnalytics();
+  window.scrollTo(0,0);
+}
+
+seed();
+renderHome();
+</script>
+</body>
+</html>
