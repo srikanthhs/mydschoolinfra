@@ -198,6 +198,32 @@ textarea.md-input{resize:none;min-height:100px;line-height:1.6}
 .btn-outlined{flex:1;padding:14px;border:1.5px solid var(--md-outline-variant);border-radius:100px;background:transparent;font-family:'Google Sans',sans-serif;font-size:15px;font-weight:600;color:var(--md-on-surface);cursor:pointer}
 .btn-filled{flex:1;padding:14px;border:none;border-radius:100px;background:var(--md-primary);font-family:'Google Sans',sans-serif;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
 .btn-filled:active{transform:scale(0.98)}
+
+/* CLICKABLE METRIC CARDS */
+.metric-card{cursor:pointer;transition:box-shadow 0.15s,transform 0.15s}
+.metric-card:hover{box-shadow:var(--elev2);transform:translateY(-1px)}
+.metric-card:active{transform:scale(0.98)}
+.metric-card.active-filter{outline:2.5px solid var(--md-primary);outline-offset:1px}
+.m-critical.active-filter{outline-color:var(--md-error)}
+.m-fixed.active-filter{outline-color:var(--md-secondary)}
+.m-cost.active-filter{outline-color:var(--md-primary)}
+/* TIME LAPSE */
+.age-chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.age-fresh{background:#E6F4EA;color:#0D652D}
+.age-mid{background:#FEF3E2;color:#E37400}
+.age-old{background:#FCE8E6;color:#B3261E}
+/* SCHOOL NAME PROMINENCE */
+.issue-school-label{font-family:'Google Sans',sans-serif;font-size:14px;font-weight:700;color:var(--md-on-surface);margin-top:3px;display:flex;align-items:center;gap:4px}
+.issue-school-label .material-symbols-rounded{font-size:15px;color:var(--md-primary)}
+
+.fs-error-banner{background:#FCE8E6;border:1px solid #F5C6C6;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:none;align-items:flex-start;gap:10px}
+.fs-error-banner.show{display:flex}
+.fs-error-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.fs-error-title{font-family:'Google Sans',sans-serif;font-size:13px;font-weight:700;color:#B3261E;margin-bottom:3px}
+.fs-error-body{font-size:12px;color:#7B1012;line-height:1.5}
+.fs-error-link{color:#1A73E8;font-weight:600;cursor:pointer;text-decoration:underline}
+.offline-banner{background:#FEF3E2;border:1px solid #FBCF82;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:8px;font-size:13px;font-family:'Google Sans',sans-serif;font-weight:500;color:#E37400}
+.offline-banner.show{display:flex}
 </style>
 </head>
 <body>
@@ -242,6 +268,17 @@ textarea.md-input{resize:none;min-height:100px;line-height:1.6}
     <span class="material-symbols-rounded">search</span>
     <input type="text" id="search-inp" placeholder="Search school, issue, block…" oninput="renderHome()">
     <span class="material-symbols-rounded" id="clear-search" style="cursor:pointer;display:none" onclick="clearSearch()">close</span>
+  </div>
+  <div class="fs-error-banner" id="fs-error-banner">
+    <div class="fs-error-icon">🔒</div>
+    <div>
+      <div class="fs-error-title">Firebase access blocked</div>
+      <div class="fs-error-body" id="fs-error-body">Firestore rules are denying requests. <span class="fs-error-link" onclick="showFirestoreHelp()">How to fix →</span></div>
+    </div>
+  </div>
+  <div class="offline-banner" id="offline-banner">
+    <span class="material-symbols-rounded icon-sm">wifi_off</span>
+    Working offline — changes will sync when connection restores
   </div>
   <div class="metric-row" id="metric-row">
     <div class="metric-card" style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:80px"><div class="spinner"></div></div>
@@ -418,25 +455,82 @@ function fromFS(doc) {
   return obj;
 }
 
-/* Fetch all issues (called every 3 seconds for live sync) */
+/* Fetch all issues — with backoff on repeated failures */
+let _fetchErrors = 0;
 async function fetchIssues() {
   try {
     const url = FS_BASE + `?key=${FS_KEY}&pageSize=200`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      const errBody = await res.json().catch(()=>({}));
+      const msg = errBody?.error?.message || ('HTTP ' + res.status);
+      handleFsError(res.status, msg);
+      _fetchErrors++;
+      throw new Error(msg);
+    }
     const data = await res.json();
     const docs = (data.documents || []).map(fromFS);
     docs.sort((a,b) => new Date(b.date) - new Date(a.date));
     allIssues = docs;
+    _fetchErrors = 0;
+    try { localStorage.setItem('myl_issues_cache', JSON.stringify(docs)); } catch(e){}
+    hideFsError();
     setSync(true);
     document.getElementById('loading-overlay').classList.add('hidden');
     renderHome();
     if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+    // Also retry custom schools if they failed to load
+    if (Object.keys(customSchools).length === 0) loadCustomSchools();
   } catch(err) {
+    _fetchErrors++;
     setSync(false);
     document.getElementById('loading-overlay').classList.add('hidden');
-    console.error(err);
+    // Show banner for network errors (Failed to fetch = TypeError)
+    if (err instanceof TypeError || err.message.includes('fetch')) {
+      handleFsError(0, 'Network error — check internet connection');
+    }
+    // Load from localStorage cache if available
+    const cached = localStorage.getItem('myl_issues_cache');
+    if (cached && allIssues.length === 0) {
+      try {
+        allIssues = JSON.parse(cached);
+        document.getElementById('offline-banner').classList.add('show');
+        renderHome();
+      } catch(e) {}
+    } else if (allIssues.length > 0) {
+      document.getElementById('offline-banner').classList.add('show');
+    }
+    console.error('fetchIssues:', err.message);
   }
+}
+
+function handleFsError(status, msg) {
+  const banner = document.getElementById('fs-error-banner');
+  const body   = document.getElementById('fs-error-body');
+  banner.classList.add('show');
+  if (status === 0 || msg.includes('Network') || msg.includes('fetch')) {
+    body.innerHTML = `Cannot reach Firebase. Check your internet connection. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>`;
+  } else if (status === 403 || msg.includes('PERMISSION_DENIED')) {
+    body.innerHTML = `Firestore rules are blocking access. <span class="fs-error-link" onclick="showFirestoreHelp()">How to fix →</span>`;
+  } else if (status === 404 || msg.includes('NOT_FOUND')) {
+    body.innerHTML = `Firestore database not created yet. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>`;
+  } else if (status === 400 || msg.includes('INVALID_ARGUMENT')) {
+    body.innerHTML = `Bad request — database may not exist. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>`;
+  } else if (status === 401) {
+    body.innerHTML = `API key invalid or restricted. Check Firebase Console → Project Settings.`;
+  } else {
+    body.innerHTML = `Error ${status||''}: ${msg} <span class="fs-error-link" onclick="showFirestoreHelp()">Help →</span>`;
+  }
+  setSync(false);
+}
+
+function hideFsError() {
+  document.getElementById('fs-error-banner').classList.remove('show');
+  document.getElementById('offline-banner').classList.remove('show');
+}
+
+function showFirestoreHelp() {
+  document.getElementById('fs-help-modal').classList.remove('hidden');
 }
 
 /* Write one document to Firestore */
@@ -445,8 +539,13 @@ async function fsAdd(data) {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify(toFS(data))
   });
-  if (!res.ok) throw new Error('Write failed: ' + res.status);
-  return res.json();
+  if (!res.ok) {
+    const errBody = await res.json().catch(()=>({}));
+    const msg = errBody?.error?.message || ('HTTP ' + res.status);
+    handleFsError(res.status, msg);
+    throw new Error(msg);
+  }
+  await fetchIssues();
 }
 
 /* Update a single field on an existing document */
@@ -456,14 +555,19 @@ async function fsUpdate(fsId, fields) {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify(toFS(fields))
   });
-  if (!res.ok) throw new Error('Update failed: ' + res.status);
+  if (!res.ok) {
+    const errBody = await res.json().catch(()=>({}));
+    const msg = errBody?.error?.message || ('HTTP ' + res.status);
+    handleFsError(res.status, msg);
+    throw new Error(msg);
+  }
   return res.json();
 }
 
 /* ── STATE ───────────────────────────────────────────────────── */
 let allIssues = [];
 let selType_ = '', selPri_ = '', photoURLs = [];
-let activeBlock = '', sortMode = 'priority', activeStatus = '';
+let activeBlock = '', sortMode = 'priority', activeStatus = '', activeMetric = '';
 
 const BLOCKS = {
   "Mayiladuthurai":[{name:"PUMS Sembanarkoil",u:"33130200101"},{name:"GHS Porayar",u:"33130200205"},{name:"GHSS Mayiladuthurai",u:"33130200312"},{name:"PUMS Athiyur",u:"33130200418"},{name:"GHS Koradacheri",u:"33130200522"},{name:"PUMS Anaikuppam",u:"33130200631"},{name:"GHSS Girls Mayiladuthurai",u:"33130200744"},{name:"GHS Karuvelankudi",u:"33130200856"},{name:"PUMS Vaitheeswarankoil",u:"33130200967"},{name:"GHS Thirukadaiyur",u:"33130201073"}],
@@ -475,9 +579,15 @@ const BLOCKS = {
 const EMOS={Toilet:"🚽",Classroom:"🏫",Roof:"🏚️",Water:"💧",Electrical:"⚡",Ramp:"♿",Compound:"🧱",Furniture:"🪑",Kitchen:"🍳","Door/Window":"🪟",Flooring:"🪵",Drainage:"🌊"};
 const AVATARBG={Toilet:"#E8F0FE",Classroom:"#F3E8FD",Roof:"#FEF3E2",Water:"#E6F7FF",Electrical:"#FFF8E1",Ramp:"#E6F4EA",Compound:"#F1F3F4","Door/Window":"#FEF3E2",Furniture:"#FCE4EC",Kitchen:"#E0F7FA",Flooring:"#FBE9E7",Drainage:"#E0F7FA"};
 
-/* ── START LIVE POLLING (every 3 seconds) ────────────────────── */
+/* ── START LIVE POLLING (adaptive interval) ─────────────────── */
 fetchIssues();
-setInterval(fetchIssues, 3000);
+setInterval(() => {
+  const delay = _fetchErrors >= 10 ? 30000 : _fetchErrors >= 3 ? 10000 : 3000;
+  if (!fetchIssues._last || Date.now() - fetchIssues._last >= delay) {
+    fetchIssues._last = Date.now();
+    fetchIssues();
+  }
+}, 3000);
 
 function setSync(ok) {
   const dot = document.getElementById('sync-dot');
@@ -486,27 +596,7 @@ function setSync(ok) {
   lbl.textContent = ok ? 'Live · Mayiladuthurai' : 'Offline';
 }
 
-/* ── SEED DEMO DATA (only if collection is empty) ────────────── */
-async function seedIfEmpty() {
-  const res = await fetch(`${FS_BASE}?key=${FS_KEY}&pageSize=1`);
-  const data = await res.json();
-  if (data.documents && data.documents.length > 0) return;
-  const demo = [
-    {block:"Mayiladuthurai",school:"GHSS Mayiladuthurai",udise:"33130200312",type:"Toilet",priority:"Critical",status:"Reported",desc:"Girls toilet block — 3 of 5 units broken. Door hinges missing. No water since 2 weeks. 180 girl students affected.",reporter:"P. Selvakumar",mobile:"9443201234",cost:45000,date:new Date('2024-04-08T09:15:00').toISOString(),photos:""},
-    {block:"Sirkali",school:"GHSS Sirkali",udise:"33130300101",type:"Roof",priority:"Critical",status:"Assigned",desc:"Middle block roof slab cracked. Rain water leaking into classrooms 6 and 7. Risk of collapse during monsoon.",reporter:"M. Radhakrishnan",mobile:"9865432100",cost:180000,date:new Date('2024-04-07T14:30:00').toISOString(),photos:""},
-    {block:"Kuthalam",school:"GHSS Kuthalam",udise:"33130400101",type:"Water",priority:"High",status:"In Progress",desc:"Overhead tank pump motor burnt. Students fetching water from 200m away. 340 students affected.",reporter:"S. Devi",mobile:"9543210876",cost:12000,date:new Date('2024-04-06T11:00:00').toISOString(),photos:""},
-    {block:"Tharangambadi",school:"GHSS Tharangambadi",udise:"33130500101",type:"Classroom",priority:"High",status:"Reported",desc:"Two classrooms demolished in 2022. New block still incomplete. Std 9 and 10 sharing single room. 78 students affected.",reporter:"K. Arulmozhi",mobile:"9344561234",cost:350000,date:new Date('2024-04-05T10:45:00').toISOString(),photos:""},
-    {block:"Kollidam",school:"GHSS Kollidam",udise:"33130600101",type:"Electrical",priority:"High",status:"Reported",desc:"Main DB sparking. Three classrooms without power. Fans not working in 40°C heat. Full rewiring needed.",reporter:"V. Sundararajan",mobile:"9443098765",cost:65000,date:new Date('2024-04-04T16:20:00').toISOString(),photos:""},
-    {block:"Mayiladuthurai",school:"GHS Koradacheri",udise:"33130200522",type:"Ramp",priority:"Medium",status:"Fixed",desc:"Wheelchair ramp repaired. Two differently-abled students can now access classrooms independently.",reporter:"T. Meenakshi",mobile:"9865123456",cost:8000,date:new Date('2024-04-03T09:00:00').toISOString(),photos:""},
-    {block:"Sirkali",school:"GHS Poompuhar",udise:"33130300871",type:"Furniture",priority:"Medium",status:"Reported",desc:"42 wooden benches broken. Students sitting on floor in classes 6-8. PWD furniture indent raised.",reporter:"R. Baskaran",mobile:"9944321098",cost:42000,date:new Date('2024-04-02T13:15:00').toISOString(),photos:""},
-    {block:"Kuthalam",school:"GHS Kilvelur",udise:"33130400547",type:"Compound",priority:"Medium",status:"Assigned",desc:"North wall 30m section collapsed. Stray cattle entering campus. DRDA estimate approved, work to begin.",reporter:"P. Lakshmi",mobile:"9843201567",cost:95000,date:new Date('2024-04-01T15:30:00').toISOString(),photos:""},
-    {block:"Tharangambadi",school:"GHS Thiruppanandal",udise:"33130500541",type:"Kitchen",priority:"Low",status:"In Progress",desc:"MDM kitchen chimney broken. Smoke entering adjacent classroom. New chimney ordered from PWD store.",reporter:"A. Vijayalakshmi",mobile:"9486012345",cost:4500,date:new Date('2024-03-30T10:00:00').toISOString(),photos:""},
-    {block:"Kollidam",school:"GHS Thirumullaivasal",udise:"33130600878",type:"Drainage",priority:"High",status:"Reported",desc:"Campus drainage blocked. Stagnant water near primary block. Dengue bleeding risk. 280 students affected.",reporter:"N. Subramanian",mobile:"9786543210",cost:22000,date:new Date('2024-03-29T14:00:00').toISOString(),photos:""},
-  ];
-  for (const d of demo) { try { await fsAdd(d); } catch(e){} }
-}
-loadCustomSchools().then(() => { populateSchools(); });
-seedIfEmpty();
+/* Demo data removed — live Firebase only */
 
 /* ── PHOTO COMPRESS & ENCODE ──────────────────────────────────── */
 function compressPhoto(file) {
@@ -683,12 +773,53 @@ async function advance(fsId) {
   const i = order.indexOf(r.status);
   if (i >= order.length - 1) return;
   const newStatus = order[i + 1];
+  // Optimistic update — update UI immediately, then sync
+  const prevStatus = r.status;
+  r.status = newStatus;
+  renderHome();
   try {
     await fsUpdate(fsId, { status: newStatus, updatedAt: new Date().toISOString() });
-    await fetchIssues();
-    // onSnapshot auto-refreshes UI instantly
-    snack('Status → ' + newStatus);
-  } catch (err) { snack('❌ Update failed'); }
+    snack('✅ Status → ' + newStatus);
+    fetchIssues(); // background refresh, no await
+  } catch (err) {
+    r.status = prevStatus; // rollback on failure
+    renderHome();
+    snack('❌ Update failed — ' + err.message);
+  }
+}
+
+
+/* ── TIME LAPSE ───────────────────────────────────────────────── */
+function timeLapse(dateStr) {
+  const now = new Date();
+  const then = new Date(dateStr);
+  if (!dateStr || isNaN(then.getTime())) return { label: 'Unknown', cls: 'age-mid' };
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 0) return { label: 'Just now', cls: 'age-fresh' };
+  if (diff < 60)   return { label: 'Just now',            cls: 'age-fresh' };
+  if (diff < 3600) return { label: Math.floor(diff/60) + ' min ago',    cls: 'age-fresh' };
+  const hrs = Math.floor(diff/3600);
+  if (hrs < 24)    return { label: hrs + ' hr' + (hrs>1?'s':'') + ' ago', cls: hrs < 6 ? 'age-fresh' : 'age-mid' };
+  const days = Math.floor(diff/86400);
+  if (days < 7)    return { label: days + ' day' + (days>1?'s':'') + ' ago', cls: days <= 2 ? 'age-mid' : 'age-old' };
+  const wks = Math.floor(days/7);
+  if (wks < 5)     return { label: wks + ' week' + (wks>1?'s':'') + ' ago',  cls: 'age-old' };
+  const mths = Math.floor(days/30);
+  return { label: mths + ' month' + (mths>1?'s':'') + ' ago', cls: 'age-old' };
+}
+
+/* ── METRIC CARD FILTER ───────────────────────────────────────── */
+function filterMetric(key) {
+  if (activeMetric === key) {
+    activeMetric = ''; activeStatus = '';
+  } else {
+    activeMetric = key;
+    if (key === 'critical') { activeStatus = ''; }
+    else if (key === 'fixed') { activeStatus = 'Fixed'; }
+    else if (key === 'pending') { activeStatus = ''; }
+    else if (key === 'cost') { activeStatus = ''; }
+  }
+  renderHome();
 }
 
 /* ── RENDER HOME ──────────────────────────────────────────────── */
@@ -704,11 +835,29 @@ function renderHome() {
   badge.style.display = critical > 0 ? 'flex' : 'none';
   if (critical > 0) badge.textContent = critical;
 
+  const inprog = data.filter(r => r.status === 'In Progress').length;
+  const assigned = data.filter(r => r.status === 'Assigned').length;
   document.getElementById('metric-row').innerHTML = `
-    <div class="metric-card m-critical"><div class="metric-num">${critical}</div><div class="metric-label">Critical Active</div><div class="metric-trend" style="color:var(--md-error)"><span class="material-symbols-rounded icon-sm">warning</span>Immediate action</div></div>
-    <div class="metric-card m-pending"><div class="metric-num">${total - fixed}</div><div class="metric-label">Pending Issues</div><div class="metric-trend" style="color:var(--warn-on)"><span class="material-symbols-rounded icon-sm">hourglass_top</span>${total} total</div></div>
-    <div class="metric-card m-fixed"><div class="metric-num">${fixed}</div><div class="metric-label">Fixed</div><div class="metric-trend" style="color:var(--md-secondary)"><span class="material-symbols-rounded icon-sm">check_circle</span>${total ? Math.round(fixed/total*100) : 0}% rate</div></div>
-    <div class="metric-card m-cost"><div class="metric-num">₹${cost>=100000?(cost/100000).toFixed(1)+'L':cost>=1000?Math.round(cost/1000)+'K':cost}</div><div class="metric-label">Est. Pending Cost</div><div class="metric-trend" style="color:var(--md-primary)"><span class="material-symbols-rounded icon-sm">currency_rupee</span>Needs release</div></div>
+    <div class="metric-card m-critical ${activeMetric==='critical'?'active-filter':''}" onclick="filterMetric('critical')" title="Show Critical issues">
+      <div class="metric-num">${critical}</div>
+      <div class="metric-label">Critical Active</div>
+      <div class="metric-trend" style="color:var(--md-error)"><span class="material-symbols-rounded icon-sm">warning</span>Tap to filter</div>
+    </div>
+    <div class="metric-card m-pending ${activeMetric==='pending'?'active-filter':''}" onclick="filterMetric('pending')" title="Show Pending issues">
+      <div class="metric-num">${total - fixed}</div>
+      <div class="metric-label">Pending Issues</div>
+      <div class="metric-trend" style="color:var(--warn-on)"><span class="material-symbols-rounded icon-sm">hourglass_top</span>${assigned} assigned · ${inprog} in progress</div>
+    </div>
+    <div class="metric-card m-fixed ${activeMetric==='fixed'?'active-filter':''}" onclick="filterMetric('fixed')" title="Show Fixed issues">
+      <div class="metric-num">${fixed}</div>
+      <div class="metric-label">Fixed</div>
+      <div class="metric-trend" style="color:var(--md-secondary)"><span class="material-symbols-rounded icon-sm">check_circle</span>${total ? Math.round(fixed/total*100) : 0}% resolution rate</div>
+    </div>
+    <div class="metric-card m-cost ${activeMetric==='cost'?'active-filter':''}" onclick="filterMetric('cost')" title="Show all issues with cost">
+      <div class="metric-num">₹${cost>=100000?(cost/100000).toFixed(1)+'L':cost>=1000?Math.round(cost/1000)+'K':cost}</div>
+      <div class="metric-label">Est. Pending Cost</div>
+      <div class="metric-trend" style="color:var(--md-primary)"><span class="material-symbols-rounded icon-sm">currency_rupee</span>${data.filter(r=>r.status!=='Fixed'&&r.cost>0).length} issues costed</div>
+    </div>
   `;
 
   // Blocks
@@ -727,10 +876,14 @@ function renderHome() {
     </div>`;
   }).join('');
 
-  // Status chips
+  // Status chips — counts reflect current metric filter
   const statuses = ['All','Reported','Assigned','In Progress','Fixed'];
+  const metricFiltered = activeMetric === 'critical' ? data.filter(r=>r.priority==='Critical'&&r.status!=='Fixed')
+                       : activeMetric === 'pending'  ? data.filter(r=>r.status!=='Fixed')
+                       : activeMetric === 'cost'     ? data.filter(r=>r.status!=='Fixed'&&r.cost>0)
+                       : data;
   document.getElementById('chips-row').innerHTML = statuses.map(s => {
-    const cnt = s === 'All' ? total : data.filter(r => r.status === s).length;
+    const cnt = s === 'All' ? metricFiltered.length : metricFiltered.filter(r => r.status === s).length;
     const isActive = activeStatus === s || (!activeStatus && s === 'All');
     return `<div class="chip-filter ${isActive ? 'active' : ''}" onclick="setStatus('${s}')">
       ${s === 'All' ? '<span class="material-symbols-rounded">filter_list</span>' : ''} ${s} <strong>${cnt}</strong>
@@ -744,8 +897,12 @@ function renderHome() {
   let filtered = data.filter(r => {
     const bm = !activeBlock || r.block === activeBlock;
     const sm = !activeStatus || activeStatus === 'All' || r.status === activeStatus;
-    const qm = !q || r.school.toLowerCase().includes(q) || r.type.toLowerCase().includes(q) || r.block.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q);
-    return bm && sm && qm;
+    const qm = !q || (r.school||'').toLowerCase().includes(q) || (r.type||'').toLowerCase().includes(q) || (r.block||'').toLowerCase().includes(q) || (r.desc||'').toLowerCase().includes(q);
+    const mm = activeMetric === 'critical' ? (r.priority === 'Critical' && r.status !== 'Fixed')
+             : activeMetric === 'pending'  ? r.status !== 'Fixed'
+             : activeMetric === 'cost'     ? (r.status !== 'Fixed' && r.cost > 0)
+             : true;
+    return bm && sm && qm && mm;
   });
 
   if (sortMode === 'priority') {
@@ -771,14 +928,15 @@ function renderHome() {
   }
 
   document.getElementById('issues-list').innerHTML = filtered.map(r => {
-    const dt = new Date(r.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const age = timeLapse(r.date);
+    const filed = new Date(r.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'});
     const photoHtml = r.photos && r.photos[0] ? `<img src="${r.photos[0]}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:2px solid var(--md-outline-variant);flex-shrink:0">` : '';
-    return `<div class="issue-card p-${r.priority.toLowerCase()}">
+    return `<div class="issue-card p-${r.priority.toLowerCase()}" onclick="openIssue('${r.fsId}')" style="cursor:pointer">
       <div class="issue-header">
         <div class="issue-avatar" style="background:${AVATARBG[r.type]||'#F1F3F4'}">${EMOS[r.type]||'⚠️'}</div>
         <div class="issue-info">
           <div class="issue-type-label">${r.type} Issue</div>
-          <div class="issue-school-name">${r.school}</div>
+          <div class="issue-school-label"><span class="material-symbols-rounded">school</span>${r.school}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap">
             <span style="font-size:12px;color:var(--md-on-surface-variant);display:flex;align-items:center;gap:2px"><span class="material-symbols-rounded icon-sm">location_on</span>${r.block}</span>
             <span class="udise-chip">${r.udise||'—'}</span>
@@ -796,11 +954,10 @@ function renderHome() {
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span class="priority-chip ${pcClass[r.priority]}">${r.priority}</span>
           <span class="status-chip ${scClass[r.status]}">${r.status}</span>
-          <span class="timestamp-chip"><span class="material-symbols-rounded icon-sm">schedule</span>${dt}</span>
+          <span class="age-chip ${age.cls}"><span class="material-symbols-rounded icon-sm">schedule</span>${age.label}</span>
+          <span style="font-size:11px;color:var(--md-on-surface-variant)">${filed}</span>
         </div>
-        ${r.status !== 'Fixed'
-          ? `<button class="advance-btn" onclick="advance('${r.fsId}')"><span class="material-symbols-rounded icon-sm">${nextIcon[r.status]}</span>${nextLabel[r.status]}</button>`
-          : `<button class="advance-btn done"><span class="material-symbols-rounded icon-sm">verified</span>Resolved</button>`}
+        <button class="advance-btn ${r.status==='Fixed'?'done':''}" onclick="event.stopPropagation();${r.status!=='Fixed'?`advance('${r.fsId}')`:''}">${r.status!=='Fixed'?`<span class="material-symbols-rounded icon-sm">${nextIcon[r.status]}</span>${nextLabel[r.status]}`:`<span class="material-symbols-rounded icon-sm">verified</span>Resolved`}</button>
       </div>
     </div>`;
   }).join('');
@@ -853,6 +1010,46 @@ function renderAnalytics() {
     </div>`;
 }
 
+
+/* ── ISSUE DETAIL SHEET ───────────────────────────────────────── */
+function openIssue(fsId) {
+  const r = allIssues.find(x => x.fsId === fsId);
+  if (!r) return;
+  const age = timeLapse(r.date);
+  const filedDate = r.date ? new Date(r.date) : null;
+  const filed = filedDate && !isNaN(filedDate) ? filedDate.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+  const scClass = {Reported:'sc-reported',Assigned:'sc-assigned','In Progress':'sc-inprogress',Fixed:'sc-fixed'};
+  const pcClass = {Critical:'pc-critical',High:'pc-high',Medium:'pc-medium',Low:'pc-low'};
+  const nextLabel = {Reported:'Assign',Assigned:'Start Fix','In Progress':'Mark Fixed'};
+  const nextIcon  = {Reported:'assignment_ind',Assigned:'construction','In Progress':'check_circle'};
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:52px;height:52px;border-radius:14px;background:${AVATARBG[r.type]||'#F1F3F4'};display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">${EMOS[r.type]||'⚠️'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Google Sans',sans-serif;font-size:17px;font-weight:700">${r.type} Issue</div>
+        <div style="font-family:'Google Sans',sans-serif;font-size:14px;font-weight:600;color:var(--md-primary);margin-top:2px;display:flex;align-items:center;gap:4px"><span class="material-symbols-rounded icon-sm">school</span>${r.school}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="priority-chip ${pcClass[r.priority]}">${r.priority}</span>
+      <span class="status-chip ${scClass[r.status]}">${r.status}</span>
+      <span class="age-chip ${age.cls}"><span class="material-symbols-rounded icon-sm">schedule</span>${age.label}</span>
+    </div>
+    <div style="background:var(--md-bg);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.7;color:var(--md-on-surface)">${r.desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--md-bg);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--md-on-surface-variant);font-weight:600;letter-spacing:0.4px;margin-bottom:3px">BLOCK</div><div style="font-size:13px;font-weight:600">📍 ${r.block}</div></div>
+      <div style="background:var(--md-bg);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--md-on-surface-variant);font-weight:600;letter-spacing:0.4px;margin-bottom:3px">UDISE</div><div style="font-size:13px;font-family:monospace;font-weight:600">${r.udise||'—'}</div></div>
+      <div style="background:var(--md-bg);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--md-on-surface-variant);font-weight:600;letter-spacing:0.4px;margin-bottom:3px">REPORTED BY</div><div style="font-size:13px;font-weight:600">${r.reporter}</div><div style="font-size:12px;color:var(--md-primary)">${r.mobile}</div></div>
+      <div style="background:var(--md-bg);border-radius:10px;padding:10px 12px"><div style="font-size:10px;color:var(--md-on-surface-variant);font-weight:600;letter-spacing:0.4px;margin-bottom:3px">EST. COST</div><div style="font-size:13px;font-weight:700;color:var(--md-primary)">${r.cost?'₹'+r.cost.toLocaleString('en-IN'):'Not estimated'}</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--md-on-surface-variant);margin-bottom:16px;display:flex;align-items:center;gap:4px"><span class="material-symbols-rounded icon-sm">calendar_today</span>Filed: ${filed}</div>
+    ${r.photos && r.photos[0] ? `<img src="${r.photos[0]}" style="width:100%;border-radius:12px;object-fit:cover;max-height:200px;margin-bottom:16px">` : ''}
+    ${r.status !== 'Fixed' ? `<button class="submit-btn" onclick="closeDetail();advance('${fsId}')"><span class="material-symbols-rounded">${nextIcon[r.status]}</span>${nextLabel[r.status]}</button>` : `<div style="background:var(--md-secondary-container);border-radius:12px;padding:14px;text-align:center;font-family:'Google Sans',sans-serif;font-weight:700;color:var(--md-on-secondary-container);display:flex;align-items:center;justify-content:center;gap:8px"><span class="material-symbols-rounded">verified</span>Issue Resolved</div>`}
+  `;
+  document.getElementById('detail-modal').classList.remove('hidden');
+}
+function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); }
+
 /* ── NAVIGATION & UTILS ───────────────────────────────────────── */
 function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -863,12 +1060,64 @@ function switchPage(page) {
   window.scrollTo(0, 0);
 }
 function setBlock(b) { activeBlock = activeBlock === b ? '' : b; renderHome(); }
-function setStatus(s) { activeStatus = s === 'All' ? '' : s; renderHome(); }
-function clearBlockFilter() { activeBlock = ''; renderHome(); }
+function setStatus(s) { activeStatus = s === 'All' ? '' : s; activeMetric = ''; renderHome(); }
+function clearBlockFilter() { activeBlock = ''; activeMetric = ''; activeStatus = ''; renderHome(); }
 function clearSearch() { document.getElementById('search-inp').value = ''; renderHome(); }
 function toggleSort() { sortMode = sortMode === 'priority' ? 'date' : 'priority'; document.getElementById('sort-btn').textContent = sortMode === 'priority' ? '↓ Priority' : '↓ Date'; renderHome(); }
 function snack(msg) { const s=document.getElementById('snackbar'); s.textContent=msg; s.classList.add('show'); setTimeout(()=>s.classList.remove('show'),3000); }
 </script>
+
+
+
+<!-- FIRESTORE HELP MODAL -->
+<div class="modal-backdrop hidden" id="fs-help-modal" onclick="document.getElementById('fs-help-modal').classList.add('hidden')">
+  <div class="modal-sheet" onclick="event.stopPropagation()" style="max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-family:'Google Sans',sans-serif;font-size:17px;font-weight:700">Fix Firebase Access</div>
+      <button onclick="document.getElementById('fs-help-modal').classList.add('hidden')" style="background:var(--md-bg);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="material-symbols-rounded" style="font-size:20px">close</span></button>
+    </div>
+    <div style="font-size:13px;color:var(--md-on-surface-variant);margin-bottom:16px">Follow these steps in Firebase Console</div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:var(--md-bg);border-radius:12px;padding:14px">
+        <div style="font-family:'Google Sans',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="background:#1A73E8;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">1</span>Open Firebase Console</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);line-height:1.6">Go to <strong>console.firebase.google.com</strong><br>Select project <strong>mydschoolinfra</strong></div>
+      </div>
+      <div style="background:var(--md-bg);border-radius:12px;padding:14px">
+        <div style="font-family:'Google Sans',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="background:#1A73E8;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">2</span>Create Firestore Database</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);line-height:1.6">Left menu → <strong>Build</strong> → <strong>Firestore Database</strong><br>If not created: click <strong>Create database</strong> → choose <strong>Start in test mode</strong> → select <strong>asia-south1 (Mumbai)</strong></div>
+      </div>
+      <div style="background:var(--md-bg);border-radius:12px;padding:14px">
+        <div style="font-family:'Google Sans',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="background:#1A73E8;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">3</span>Set Rules</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);line-height:1.6">Inside Firestore Database → click <strong>Rules</strong> tab<br>Replace all text with:</div>
+        <div style="background:#202124;color:#80CBC4;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;font-family:monospace;line-height:1.7;white-space:pre-wrap">service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</div>
+        <div style="font-size:12px;color:var(--md-on-surface-variant);margin-top:6px">Click <strong>Publish</strong></div>
+      </div>
+      <div style="background:#E6F4EA;border-radius:12px;padding:14px">
+        <div style="font-family:'Google Sans',sans-serif;font-size:13px;font-weight:700;color:#0D652D;margin-bottom:4px">✅ After publishing rules</div>
+        <div style="font-size:12px;color:#0D652D">The app will automatically reconnect and load data within a few seconds.</div>
+      </div>
+    </div>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+<!-- ISSUE DETAIL MODAL -->
+<div class="modal-backdrop hidden" id="detail-modal" onclick="closeDetail()">
+  <div class="modal-sheet" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-handle" style="margin:0"></div>
+      <button onclick="closeDetail()" style="background:var(--md-bg);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="material-symbols-rounded" style="font-size:20px">close</span></button>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+</div>
 
 <!-- ADD SCHOOL MODAL -->
 <div class="modal-backdrop hidden" id="add-school-modal" onclick="closeAddSchool(event)">
