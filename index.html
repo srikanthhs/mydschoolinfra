@@ -224,6 +224,41 @@ textarea.md-input{resize:none;min-height:100px;line-height:1.6}
 .fs-error-link{color:#1A73E8;font-weight:600;cursor:pointer;text-decoration:underline}
 .offline-banner{background:#FEF3E2;border:1px solid #FBCF82;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:8px;font-size:13px;font-family:'Google Sans',sans-serif;font-weight:500;color:#E37400}
 .offline-banner.show{display:flex}
+
+/* REPORTS TABLE */
+.rpt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;box-shadow:var(--elev1)}
+.rpt-table{width:100%;border-collapse:collapse;background:#fff;font-size:12px;min-width:700px}
+.rpt-table th{background:#F8F9FA;padding:10px 12px;text-align:left;font-family:'Google Sans',sans-serif;font-weight:700;font-size:11px;color:var(--md-on-surface-variant);border-bottom:1px solid var(--md-outline-variant);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:2}
+.rpt-table th:hover{background:#EEF3FC;color:var(--md-primary)}
+.rpt-table th.sort-asc::after{content:' ↑'}
+.rpt-table th.sort-desc::after{content:' ↓'}
+.rpt-table td{padding:10px 12px;border-bottom:1px solid #F1F3F4;vertical-align:middle;line-height:1.4}
+.rpt-table tr:last-child td{border-bottom:none}
+.rpt-table tr.row-fixed td{background:#E6F4EA}
+.rpt-table tr.row-critical td{background:#FFF0EE}
+.rpt-table tr.row-high td{background:#FFF8F0}
+.rpt-table tr.row-medium td{background:#FFFDF0}
+.rpt-table tr.row-low td{background:#F8FFF0}
+.rpt-table tr:hover td{filter:brightness(0.97);cursor:pointer}
+.rpt-school{font-weight:600;color:var(--md-on-surface);font-size:12px}
+.rpt-block{color:var(--md-on-surface-variant);font-size:11px;margin-top:1px}
+.rpt-cost{font-weight:700;color:var(--md-primary)}
+.rpt-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.rpt-filter-sel{padding:8px 12px;border:1.5px solid var(--md-outline-variant);border-radius:8px;font-size:13px;background:#fff;color:var(--md-on-surface);outline:none;font-family:'Roboto',sans-serif;-webkit-appearance:none;cursor:pointer}
+.rpt-filter-sel:focus{border-color:var(--md-primary)}
+.rpt-count{font-size:13px;color:var(--md-on-surface-variant);font-family:'Google Sans',sans-serif;align-self:center;margin-left:auto}
+/* ANALYTICS CLICKABLE */
+.an-stat-tile{border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;border:2px solid transparent}
+.an-stat-tile:hover{transform:translateY(-2px);box-shadow:var(--elev2)}
+.an-stat-tile:active{transform:scale(0.97)}
+.an-bar-row{margin-bottom:14px;cursor:pointer;padding:8px;border-radius:10px;transition:background 0.15s}
+.an-bar-row:hover{background:var(--md-surface1)}
+.an-bar-row:active{background:var(--md-primary-container)}
+/* REPORTS SUMMARY CARDS */
+.rpt-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:14px}
+.rpt-sum-card{background:#fff;border-radius:12px;padding:12px;box-shadow:var(--elev1);text-align:center}
+.rpt-sum-num{font-family:'Google Sans Display',sans-serif;font-size:24px;font-weight:700;line-height:1}
+.rpt-sum-lbl{font-size:11px;color:var(--md-on-surface-variant);margin-top:3px;font-family:'Google Sans',sans-serif}
 </style>
 </head>
 <body>
@@ -387,6 +422,53 @@ textarea.md-input{resize:none;min-height:100px;line-height:1.6}
   <div style="height:12px"></div>
 </div>
 
+<!-- PAGE: REPORTS -->
+<div class="page" id="page-reports">
+  <div style="height:16px"></div>
+  <div style="font-family:'Google Sans Display',sans-serif;font-size:24px;font-weight:700;margin-bottom:4px">Reports</div>
+  <p class="page-sub">Full issue register — sortable by any column</p>
+  <div class="rpt-summary" id="rpt-summary"></div>
+  <div class="rpt-filters">
+    <select class="rpt-filter-sel" id="rpt-fblock" onchange="renderReports()">
+      <option value="">All Blocks</option>
+      <option>Mayiladuthurai</option><option>Sirkali</option><option>Kuthalam</option>
+      <option>Tharangambadi</option><option>Kollidam</option>
+    </select>
+    <select class="rpt-filter-sel" id="rpt-fstatus" onchange="renderReports()">
+      <option value="">All Status</option>
+      <option>Reported</option><option>Assigned</option><option>In Progress</option><option>Fixed</option>
+    </select>
+    <select class="rpt-filter-sel" id="rpt-fpriority" onchange="renderReports()">
+      <option value="">All Priority</option>
+      <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+    </select>
+    <select class="rpt-filter-sel" id="rpt-ftype" onchange="renderReports()">
+      <option value="">All Types</option>
+      <option>Toilet</option><option>Classroom</option><option>Roof</option><option>Water</option>
+      <option>Electrical</option><option>Ramp</option><option>Compound</option><option>Furniture</option>
+      <option>Kitchen</option><option>Door/Window</option><option>Flooring</option><option>Drainage</option>
+    </select>
+    <span class="rpt-count" id="rpt-count"></span>
+  </div>
+  <div class="rpt-wrap">
+    <table class="rpt-table" id="rpt-table">
+      <thead>
+        <tr>
+          <th onclick="rptSort('date')" id="rth-date">Date Filed</th>
+          <th onclick="rptSort('school')" id="rth-school">School</th>
+          <th onclick="rptSort('type')" id="rth-type">Issue</th>
+          <th onclick="rptSort('priority')" id="rth-priority">Priority</th>
+          <th onclick="rptSort('status')" id="rth-status">Status</th>
+          <th onclick="rptSort('age')" id="rth-age">Age</th>
+          <th onclick="rptSort('cost')" id="rth-cost">Cost (₹)</th>
+          <th>Reporter</th>
+        </tr>
+      </thead>
+      <tbody id="rpt-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- PAGE: ANALYTICS -->
 <div class="page" id="page-analytics">
   <div style="height:16px"></div>
@@ -405,6 +487,10 @@ textarea.md-input{resize:none;min-height:100px;line-height:1.6}
     <div class="nav-indicator"><span class="material-symbols-rounded">add_circle</span></div>
     <span class="nav-label">Report</span>
   </button>
+  <button class="nav-item" id="nav-reports" onclick="switchPage('reports')">
+    <div class="nav-indicator"><span class="material-symbols-rounded">table_view</span></div>
+    <span class="nav-label">Table</span>
+  </button>
   <button class="nav-item" id="nav-analytics" onclick="switchPage('analytics')">
     <div class="nav-indicator"><span class="material-symbols-rounded">bar_chart</span></div>
     <span class="nav-label">Analytics</span>
@@ -416,156 +502,191 @@ textarea.md-input{resize:none;min-height:100px;line-height:1.6}
 
 
 <script>
-/* ── FIREBASE INIT ───────────────────────────────────────────── */
-/* ── FIRESTORE REST API — NO SDK NEEDED ──────────────────────── */
-const FS_KEY    = "AIzaSyDMVNq6TuOgeBKmgTf9XffKbyJL0_AcLx4";
-const FS_BASE   = "https://firestore.googleapis.com/v1/projects/mydschoolinfra/databases/(default)/documents/schoolIssues";
+/* ════════════════════════════════════════════════════════════════
+   DATA LAYER — localStorage PRIMARY + Firestore BACKGROUND SYNC
+   App works instantly offline. Firestore syncs when available.
+   ════════════════════════════════════════════════════════════════ */
+const FS_KEY     = "AIzaSyDMVNq6TuOgeBKmgTf9XffKbyJL0_AcLx4";
+const FS_BASE    = "https://firestore.googleapis.com/v1/projects/mydschoolinfra/databases/(default)/documents/schoolIssues";
 const FS_SCHOOLS = "https://firestore.googleapis.com/v1/projects/mydschoolinfra/databases/(default)/documents/customSchools";
+const LS_ISSUES  = 'myl_issues';
+const LS_SCHOOLS = 'myl_schools';
+const LS_PENDING = 'myl_pending';
 
-/* custom schools cache: { blockName: [{name, udise}] } */
 let customSchools = {};
+let firestoreOnline = false;
 
-/* Convert plain JS object → Firestore REST fields */
-function toFS(obj) {
-  const fields = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === null || v === undefined) fields[k] = {nullValue: null};
-    else if (typeof v === 'number')    fields[k] = Number.isInteger(v) ? {integerValue: String(v)} : {doubleValue: v};
-    else if (typeof v === 'boolean')   fields[k] = {booleanValue: v};
-    else if (Array.isArray(v))         fields[k] = {arrayValue: {values: v.map(x => ({stringValue: String(x)}))}};
-    else                               fields[k] = {stringValue: String(v)};
-  }
-  return {fields};
+/* localStorage helpers */
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* Generate a local ID (starts with L so we know it's not a Firestore ID) */
+function localId(){return 'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+/* Load issues from localStorage */
+function loadLocalIssues(){
+  const d=lsGet(LS_ISSUES)||[];
+  d.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return d;
 }
 
-/* Convert Firestore REST document → plain JS object */
-function fromFS(doc) {
-  const obj = {};
-  const parts = doc.name.split('/');
-  obj.fsId = parts[parts.length - 1];
-  for (const [k, v] of Object.entries(doc.fields || {})) {
-    if      (v.stringValue  !== undefined) obj[k] = v.stringValue;
-    else if (v.integerValue !== undefined) obj[k] = Number(v.integerValue);
-    else if (v.doubleValue  !== undefined) obj[k] = v.doubleValue;
-    else if (v.booleanValue !== undefined) obj[k] = v.booleanValue;
-    else if (v.nullValue    !== undefined) obj[k] = null;
-    else if (v.arrayValue   !== undefined) obj[k] = (v.arrayValue.values||[]).map(x=>x.stringValue||'');
-    else obj[k] = null;
+/* Add issue: save locally first, push to Firestore in background */
+async function addIssue(data){
+  const issue={...data, fsId:localId(), synced:false};
+  const issues=loadLocalIssues();
+  issues.unshift(issue);
+  lsSet(LS_ISSUES, issues);
+  allIssues=issues;
+  renderHome();
+  try{
+    const res=await fetch(`${FS_BASE}?key=${FS_KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(toFS(data))
+    });
+    if(res.ok){
+      const saved=await res.json();
+      issue.fsId=saved.name.split('/').pop();
+      issue.synced=true;
+      lsSet(LS_ISSUES,issues);
+      firestoreOnline=true; setSync(true); hideFsBanner();
+    }
+  }catch(e){
+    const p=lsGet(LS_PENDING)||[];
+    p.push(issue);
+    lsSet(LS_PENDING,p);
+  }
+}
+
+/* Update status: save locally first, push to Firestore in background */
+async function updateStatus(fsId, newStatus){
+  const issues=loadLocalIssues();
+  const r=issues.find(x=>x.fsId===fsId);
+  if(!r)return;
+  r.status=newStatus;
+  r.updatedAt=new Date().toISOString();
+  lsSet(LS_ISSUES,issues);
+  allIssues=issues;
+  renderHome();
+  if(firestoreOnline && !fsId.startsWith('L')){
+    try{
+      const mask='updateMask.fieldPaths=status&updateMask.fieldPaths=updatedAt';
+      await fetch(`${FS_BASE}/${fsId}?key=${FS_KEY}&${mask}`,{
+        method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(toFS({status:newStatus,updatedAt:r.updatedAt}))
+      });
+    }catch(e){}
+  }
+}
+
+/* Sync from Firestore → merge into localStorage */
+async function syncFromFirestore(){
+  try{
+    const res=await fetch(`${FS_BASE}?key=${FS_KEY}&pageSize=200`);
+    if(!res.ok){
+      showFsBanner(res.status,'');
+      firestoreOnline=false; setSync(false); return;
+    }
+    const data=await res.json();
+    const remote=(data.documents||[]).map(d=>({...fromFS(d),synced:true}));
+    const local=loadLocalIssues();
+    const localOnly=local.filter(r=>r.fsId.startsWith('L'));
+    const merged=[...remote,...localOnly];
+    merged.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    lsSet(LS_ISSUES,merged);
+    allIssues=merged;
+    firestoreOnline=true; setSync(true); hideFsBanner();
+    renderHome();
+    if(document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+    if(document.getElementById('page-reports').classList.contains('active')) renderReports();
+    syncPending();
+    if(Object.keys(customSchools).length===0) loadCustomSchools();
+  }catch(e){
+    firestoreOnline=false; setSync(false);
+    if(allIssues.length===0) showFsBanner(0,e.message);
+  }
+}
+
+/* Push locally-saved pending issues to Firestore */
+async function syncPending(){
+  const pending=lsGet(LS_PENDING)||[];
+  if(!pending.length)return;
+  const remaining=[];
+  for(const issue of pending){
+    try{
+      const {fsId,synced,...data}=issue;
+      const res=await fetch(`${FS_BASE}?key=${FS_KEY}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(toFS(data))
+      });
+      if(!res.ok){remaining.push(issue);continue;}
+      const saved=await res.json();
+      const issues=loadLocalIssues();
+      const idx=issues.findIndex(r=>r.fsId===fsId);
+      if(idx>=0){issues[idx].fsId=saved.name.split('/').pop();issues[idx].synced=true;lsSet(LS_ISSUES,issues);}
+    }catch(e){remaining.push(issue);}
+  }
+  lsSet(LS_PENDING,remaining);
+}
+
+/* Firestore format helpers */
+function toFS(obj){
+  const f={};
+  for(const[k,v]of Object.entries(obj)){
+    if(v===null||v===undefined)f[k]={nullValue:null};
+    else if(typeof v==='number')f[k]=Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+    else if(typeof v==='boolean')f[k]={booleanValue:v};
+    else if(Array.isArray(v))f[k]={arrayValue:{values:v.map(x=>({stringValue:String(x)}))}};
+    else f[k]={stringValue:String(v)};
+  }
+  return{fields:f};
+}
+function fromFS(doc){
+  const obj={};
+  obj.fsId=doc.name.split('/').pop();
+  for(const[k,v]of Object.entries(doc.fields||{})){
+    if(v.stringValue!==undefined)obj[k]=v.stringValue;
+    else if(v.integerValue!==undefined)obj[k]=Number(v.integerValue);
+    else if(v.doubleValue!==undefined)obj[k]=v.doubleValue;
+    else if(v.booleanValue!==undefined)obj[k]=v.booleanValue;
+    else if(v.nullValue!==undefined)obj[k]=null;
+    else if(v.arrayValue!==undefined)obj[k]=(v.arrayValue.values||[]).map(x=>x.stringValue||'');
+    else obj[k]=null;
   }
   return obj;
 }
 
-/* Fetch all issues — with backoff on repeated failures */
-let _fetchErrors = 0;
-async function fetchIssues() {
-  try {
-    const url = FS_BASE + `?key=${FS_KEY}&pageSize=200`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errBody = await res.json().catch(()=>({}));
-      const msg = errBody?.error?.message || ('HTTP ' + res.status);
-      handleFsError(res.status, msg);
-      _fetchErrors++;
-      throw new Error(msg);
-    }
-    const data = await res.json();
-    const docs = (data.documents || []).map(fromFS);
-    docs.sort((a,b) => new Date(b.date) - new Date(a.date));
-    allIssues = docs;
-    _fetchErrors = 0;
-    try { localStorage.setItem('myl_issues_cache', JSON.stringify(docs)); } catch(e){}
-    hideFsError();
-    setSync(true);
-    document.getElementById('loading-overlay').classList.add('hidden');
-    renderHome();
-    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
-    // Also retry custom schools if they failed to load
-    if (Object.keys(customSchools).length === 0) loadCustomSchools();
-  } catch(err) {
-    _fetchErrors++;
-    setSync(false);
-    document.getElementById('loading-overlay').classList.add('hidden');
-    // Show banner for network errors (Failed to fetch = TypeError)
-    if (err instanceof TypeError || err.message.includes('fetch')) {
-      handleFsError(0, 'Network error — check internet connection');
-    }
-    // Load from localStorage cache if available
-    const cached = localStorage.getItem('myl_issues_cache');
-    if (cached && allIssues.length === 0) {
-      try {
-        allIssues = JSON.parse(cached);
-        document.getElementById('offline-banner').classList.add('show');
-        renderHome();
-      } catch(e) {}
-    } else if (allIssues.length > 0) {
-      document.getElementById('offline-banner').classList.add('show');
-    }
-    console.error('fetchIssues:', err.message);
-  }
-}
-
-function handleFsError(status, msg) {
-  const banner = document.getElementById('fs-error-banner');
-  const body   = document.getElementById('fs-error-body');
+/* Banner helpers */
+function showFsBanner(status,msg){
+  const banner=document.getElementById('fs-error-banner');
+  const body=document.getElementById('fs-error-body');
   banner.classList.add('show');
-  if (status === 0 || msg.includes('Network') || msg.includes('fetch')) {
-    body.innerHTML = `Cannot reach Firebase. Check your internet connection. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>`;
-  } else if (status === 403 || msg.includes('PERMISSION_DENIED')) {
-    body.innerHTML = `Firestore rules are blocking access. <span class="fs-error-link" onclick="showFirestoreHelp()">How to fix →</span>`;
-  } else if (status === 404 || msg.includes('NOT_FOUND')) {
-    body.innerHTML = `Firestore database not created yet. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>`;
-  } else if (status === 400 || msg.includes('INVALID_ARGUMENT')) {
-    body.innerHTML = `Bad request — database may not exist. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>`;
-  } else if (status === 401) {
-    body.innerHTML = `API key invalid or restricted. Check Firebase Console → Project Settings.`;
-  } else {
-    body.innerHTML = `Error ${status||''}: ${msg} <span class="fs-error-link" onclick="showFirestoreHelp()">Help →</span>`;
-  }
-  setSync(false);
+  if(status===0)body.innerHTML='Firebase unreachable — working offline. Data saved locally. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>';
+  else if(status===403)body.innerHTML='Firestore rules blocking access. <span class="fs-error-link" onclick="showFirestoreHelp()">How to fix →</span>';
+  else if(status===404||status===400)body.innerHTML='Firestore database not created yet. <span class="fs-error-link" onclick="showFirestoreHelp()">Setup guide →</span>';
+  else body.innerHTML=`Firebase error ${status}. <span class="fs-error-link" onclick="showFirestoreHelp()">Help →</span>`;
 }
-
-function hideFsError() {
+function hideFsBanner(){
   document.getElementById('fs-error-banner').classList.remove('show');
   document.getElementById('offline-banner').classList.remove('show');
 }
-
-function showFirestoreHelp() {
-  document.getElementById('fs-help-modal').classList.remove('hidden');
+function showFirestoreHelp(){document.getElementById('fs-help-modal').classList.remove('hidden');}
+function setSync(ok){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+(ok?'live':'connecting');
+  lbl.textContent=ok?'Live · Mayiladuthurai':'Local · tap to setup →';
+  if(!ok) lbl.onclick=()=>showFirestoreHelp();
+  else lbl.onclick=null;
 }
 
-/* Write one document to Firestore */
-async function fsAdd(data) {
-  const res = await fetch(`${FS_BASE}?key=${FS_KEY}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(toFS(data))
-  });
-  if (!res.ok) {
-    const errBody = await res.json().catch(()=>({}));
-    const msg = errBody?.error?.message || ('HTTP ' + res.status);
-    handleFsError(res.status, msg);
-    throw new Error(msg);
-  }
-  await fetchIssues();
-}
+/* ── BOOT: load local data immediately, then sync ────────────── */
+let allIssues = loadLocalIssues();
+document.getElementById('loading-overlay').classList.add('hidden');
+if(allIssues.length>0) { renderHome(); }
+syncFromFirestore();
+setInterval(syncFromFirestore, 8000);
 
-/* Update a single field on an existing document */
-async function fsUpdate(fsId, fields) {
-  const mask = Object.keys(fields).map(k=>'updateMask.fieldPaths='+k).join('&');
-  const res = await fetch(`${FS_BASE}/${fsId}?key=${FS_KEY}&${mask}`, {
-    method: 'PATCH', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(toFS(fields))
-  });
-  if (!res.ok) {
-    const errBody = await res.json().catch(()=>({}));
-    const msg = errBody?.error?.message || ('HTTP ' + res.status);
-    handleFsError(res.status, msg);
-    throw new Error(msg);
-  }
-  return res.json();
-}
-
-/* ── STATE ───────────────────────────────────────────────────── */
-let allIssues = [];
+/* ── STATE ─────────────────────────────────────────────────────── */
 let selType_ = '', selPri_ = '', photoURLs = [];
 let activeBlock = '', sortMode = 'priority', activeStatus = '', activeMetric = '';
 
@@ -579,15 +700,7 @@ const BLOCKS = {
 const EMOS={Toilet:"🚽",Classroom:"🏫",Roof:"🏚️",Water:"💧",Electrical:"⚡",Ramp:"♿",Compound:"🧱",Furniture:"🪑",Kitchen:"🍳","Door/Window":"🪟",Flooring:"🪵",Drainage:"🌊"};
 const AVATARBG={Toilet:"#E8F0FE",Classroom:"#F3E8FD",Roof:"#FEF3E2",Water:"#E6F7FF",Electrical:"#FFF8E1",Ramp:"#E6F4EA",Compound:"#F1F3F4","Door/Window":"#FEF3E2",Furniture:"#FCE4EC",Kitchen:"#E0F7FA",Flooring:"#FBE9E7",Drainage:"#E0F7FA"};
 
-/* ── START LIVE POLLING (adaptive interval) ─────────────────── */
-fetchIssues();
-setInterval(() => {
-  const delay = _fetchErrors >= 10 ? 30000 : _fetchErrors >= 3 ? 10000 : 3000;
-  if (!fetchIssues._last || Date.now() - fetchIssues._last >= delay) {
-    fetchIssues._last = Date.now();
-    fetchIssues();
-  }
-}, 3000);
+/* old polling removed — syncFromFirestore handles this */
 
 function setSync(ok) {
   const dot = document.getElementById('sync-dot');
@@ -596,7 +709,7 @@ function setSync(ok) {
   lbl.textContent = ok ? 'Live · Mayiladuthurai' : 'Offline';
 }
 
-/* Demo data removed — live Firebase only */
+
 
 /* ── PHOTO COMPRESS & ENCODE ──────────────────────────────────── */
 function compressPhoto(file) {
@@ -636,8 +749,11 @@ async function handlePhotos(e) {
 
 /* ── FORM HELPERS ─────────────────────────────────────────────── */
 async function loadCustomSchools() {
+  const cached = lsGet(LS_SCHOOLS);
+  if (cached) { customSchools = cached; populateSchools(); }
   try {
     const res = await fetch(`${FS_SCHOOLS}?key=${FS_KEY}&pageSize=500`);
+    if (!res.ok) return;
     const data = await res.json();
     customSchools = {};
     (data.documents || []).forEach(doc => {
@@ -645,7 +761,9 @@ async function loadCustomSchools() {
       if (!customSchools[d.block]) customSchools[d.block] = [];
       customSchools[d.block].push({ name: d.name, u: d.udise || '' });
     });
-  } catch(e) { console.warn('Custom schools load failed', e); }
+    lsSet(LS_SCHOOLS, customSchools);
+    populateSchools();
+  } catch(e) {}
 }
 
 function populateSchools() {
@@ -708,12 +826,13 @@ async function saveNewSchool() {
   const saveBtn = document.querySelector('#add-school-modal .btn-filled');
   saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
   try {
-    await fetch(`${FS_SCHOOLS}?key=${FS_KEY}`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(toFS({ block, name, udise, addedAt: new Date().toISOString() }))
-    });
     if (!customSchools[block]) customSchools[block] = [];
     customSchools[block].push({ name, u: udise });
+    lsSet(LS_SCHOOLS, customSchools);
+    fetch(`${FS_SCHOOLS}?key=${FS_KEY}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(toFS({ block, name, udise, addedAt: new Date().toISOString() }))
+    }).catch(()=>{});
     document.getElementById('add-school-modal').classList.add('hidden');
     populateSchools();
     // Auto-select the newly added school
@@ -741,7 +860,7 @@ async function submitReport() {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Saving…';
   try {
-    await fsAdd({
+    await addIssue({
       block: b, school: sc,
       udise: document.getElementById('f-udise').value,
       type: selType_, priority: selPri_, status: 'Reported',
@@ -772,20 +891,8 @@ async function advance(fsId) {
   if (!r) return;
   const i = order.indexOf(r.status);
   if (i >= order.length - 1) return;
-  const newStatus = order[i + 1];
-  // Optimistic update — update UI immediately, then sync
-  const prevStatus = r.status;
-  r.status = newStatus;
-  renderHome();
-  try {
-    await fsUpdate(fsId, { status: newStatus, updatedAt: new Date().toISOString() });
-    snack('✅ Status → ' + newStatus);
-    fetchIssues(); // background refresh, no await
-  } catch (err) {
-    r.status = prevStatus; // rollback on failure
-    renderHome();
-    snack('❌ Update failed — ' + err.message);
-  }
+  await updateStatus(fsId, order[i + 1]);
+  snack('✅ Status → ' + order[i + 1]);
 }
 
 
@@ -956,6 +1063,7 @@ function renderHome() {
           <span class="status-chip ${scClass[r.status]}">${r.status}</span>
           <span class="age-chip ${age.cls}"><span class="material-symbols-rounded icon-sm">schedule</span>${age.label}</span>
           <span style="font-size:11px;color:var(--md-on-surface-variant)">${filed}</span>
+          ${r.synced===false?'<span style="font-size:10px;background:#FEF3E2;color:#E37400;padding:2px 6px;border-radius:4px;font-weight:600">📱 Local</span>':''}
         </div>
         <button class="advance-btn ${r.status==='Fixed'?'done':''}" onclick="event.stopPropagation();${r.status!=='Fixed'?`advance('${r.fsId}')`:''}">${r.status!=='Fixed'?`<span class="material-symbols-rounded icon-sm">${nextIcon[r.status]}</span>${nextLabel[r.status]}`:`<span class="material-symbols-rounded icon-sm">verified</span>Resolved`}</button>
       </div>
@@ -966,47 +1074,122 @@ function renderHome() {
 /* ── ANALYTICS ────────────────────────────────────────────────── */
 function renderAnalytics() {
   const data = allIssues;
-  const byType = {}, byBlock = {};
-  data.forEach(r => { byType[r.type]=(byType[r.type]||0)+1; byBlock[r.block]=(byBlock[r.block]||0)+1; });
-  const maxT = Math.max(...Object.values(byType), 1);
-  const maxB = Math.max(...Object.values(byBlock), 1);
+  const byType = {}, byBlock = {}, byPriority = {};
+  data.forEach(r => {
+    byType[r.type]=(byType[r.type]||0)+1;
+    byBlock[r.block]=(byBlock[r.block]||0)+1;
+    byPriority[r.priority]=(byPriority[r.priority]||0)+1;
+  });
+  const maxT=Math.max(...Object.values(byType),1);
+  const maxB=Math.max(...Object.values(byBlock),1);
+  const total=data.length;
   const fixed=data.filter(r=>r.status==='Fixed').length;
   const inprog=data.filter(r=>r.status==='In Progress').length;
   const assigned=data.filter(r=>r.status==='Assigned').length;
   const reported=data.filter(r=>r.status==='Reported').length;
+  const pendingCost=data.filter(r=>r.status!=='Fixed').reduce((a,r)=>a+(r.cost||0),0);
+  const avgDays = data.length ? (data.filter(r=>r.status==='Fixed').reduce((a,r)=>{
+    if(!r.updatedAt||!r.date) return a;
+    return a+(new Date(r.updatedAt)-new Date(r.date))/86400000;
+  },0)/Math.max(fixed,1)).toFixed(1) : '—';
+
+  function filterAndGo(filterKey, filterVal) {
+    switchPage('home');
+    if(filterKey==='status'){ activeStatus=filterVal; activeMetric=''; }
+    else if(filterKey==='block'){ activeBlock=filterVal; }
+    else if(filterKey==='type'){ activeStatus=''; activeMetric=''; activeBlock='';
+      /* pass type filter via search */
+      document.getElementById('search-inp').value=filterVal; }
+    renderHome();
+  }
+
   const typeHTML=Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`
-    <div style="margin-bottom:14px">
+    <div class="an-bar-row" onclick="filterAndGo('type','${t.replace(/'/g,"\'")}')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-        <span style="font-size:14px;font-weight:500">${EMOS[t]||'⚠️'} ${t}</span>
-        <span style="font-size:14px;font-weight:700;color:var(--md-primary)">${c}</span>
+        <span style="font-size:13px;font-weight:500">${EMOS[t]||'⚠️'} ${t}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;font-weight:700;color:var(--md-primary)">${c}</span>
+          <span class="material-symbols-rounded icon-sm" style="color:var(--md-primary)">arrow_forward</span>
+        </div>
       </div>
-      <div style="background:var(--md-bg);border-radius:4px;height:8px"><div style="width:${(c/maxT*100).toFixed(0)}%;height:100%;background:var(--md-primary);border-radius:4px"></div></div>
+      <div style="background:var(--md-bg);border-radius:4px;height:8px"><div style="width:${(c/maxT*100).toFixed(0)}%;height:100%;background:var(--md-primary);border-radius:4px;transition:width 0.4s"></div></div>
+      <div style="font-size:10px;color:var(--md-on-surface-variant);margin-top:3px">${((c/total)*100).toFixed(0)}% of all issues · tap to filter</div>
     </div>`).join('');
-  const blockHTML=Object.entries(byBlock).sort((a,b)=>b[1]-a[1]).map(([b,c])=>`
-    <div style="margin-bottom:14px">
+
+  const blockHTML=Object.entries(byBlock).sort((a,b)=>b[1]-a[1]).map(([b,c])=>{
+    const bFixed=data.filter(r=>r.block===b&&r.status==='Fixed').length;
+    const bCrit=data.filter(r=>r.block===b&&r.priority==='Critical'&&r.status!=='Fixed').length;
+    return`<div class="an-bar-row" onclick="filterAndGo('block','${b}')">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-        <span style="font-size:14px;font-weight:500">📍 ${b}</span>
-        <span style="font-size:14px;font-weight:700;color:var(--md-secondary)">${c}</span>
+        <span style="font-size:13px;font-weight:600">📍 ${b}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${bCrit?`<span style="font-size:11px;background:var(--crit-container);color:var(--crit-on);padding:2px 7px;border-radius:6px;font-weight:700">${bCrit} critical</span>`:''}
+          <span style="font-size:13px;font-weight:700;color:var(--md-secondary)">${c}</span>
+          <span class="material-symbols-rounded icon-sm" style="color:var(--md-secondary)">arrow_forward</span>
+        </div>
       </div>
-      <div style="background:var(--md-bg);border-radius:4px;height:8px"><div style="width:${(c/maxB*100).toFixed(0)}%;height:100%;background:var(--md-secondary);border-radius:4px"></div></div>
-    </div>`).join('');
+      <div style="background:var(--md-bg);border-radius:4px;height:8px;position:relative">
+        <div style="width:${(c/maxB*100).toFixed(0)}%;height:100%;background:var(--md-secondary);border-radius:4px"></div>
+        <div style="width:${(bFixed/maxB*100).toFixed(0)}%;height:100%;background:#A8DAB5;border-radius:4px;position:absolute;top:0;left:0;opacity:0.6"></div>
+      </div>
+      <div style="font-size:10px;color:var(--md-on-surface-variant);margin-top:3px">${bFixed} fixed · ${c-bFixed} pending · tap to filter</div>
+    </div>`;
+  }).join('');
+
   document.getElementById('analytics-content').innerHTML=`
     <div class="form-section">
-      <div class="form-section-title"><span class="material-symbols-rounded">donut_large</span>Status Breakdown</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="background:var(--crit-container);border-radius:14px;padding:16px;text-align:center"><div style="font-size:28px;font-weight:700;color:var(--crit-on)">${reported}</div><div style="font-size:12px;color:var(--crit-on);margin-top:4px">Reported</div></div>
-        <div style="background:#F3E8FD;border-radius:14px;padding:16px;text-align:center"><div style="font-size:28px;font-weight:700;color:#6200EE">${assigned}</div><div style="font-size:12px;color:#6200EE;margin-top:4px">Assigned</div></div>
-        <div style="background:var(--warn-container);border-radius:14px;padding:16px;text-align:center"><div style="font-size:28px;font-weight:700;color:var(--warn-on)">${inprog}</div><div style="font-size:12px;color:var(--warn-on);margin-top:4px">In Progress</div></div>
-        <div style="background:var(--low-container);border-radius:14px;padding:16px;text-align:center"><div style="font-size:28px;font-weight:700;color:var(--low-on)">${fixed}</div><div style="font-size:12px;color:var(--low-on);margin-top:4px">Fixed</div></div>
+      <div class="form-section-title"><span class="material-symbols-rounded">summarize</span>District Summary</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0">
+        <div style="background:var(--md-bg);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:var(--md-primary);font-family:'Google Sans Display',sans-serif">${total}</div>
+          <div style="font-size:11px;color:var(--md-on-surface-variant);margin-top:3px">Total Issues</div>
+        </div>
+        <div style="background:var(--md-bg);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:var(--md-secondary);font-family:'Google Sans Display',sans-serif">${total?Math.round(fixed/total*100):0}%</div>
+          <div style="font-size:11px;color:var(--md-on-surface-variant);margin-top:3px">Resolution Rate</div>
+        </div>
+        <div style="background:var(--md-bg);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:var(--warn-on);font-family:'Google Sans Display',sans-serif">₹${pendingCost>=100000?(pendingCost/100000).toFixed(1)+'L':pendingCost>=1000?Math.round(pendingCost/1000)+'K':pendingCost}</div>
+          <div style="font-size:11px;color:var(--md-on-surface-variant);margin-top:3px">Pending Cost</div>
+        </div>
+        <div style="background:var(--md-bg);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:var(--md-primary);font-family:'Google Sans Display',sans-serif">${avgDays}</div>
+          <div style="font-size:11px;color:var(--md-on-surface-variant);margin-top:3px">Avg Days to Fix</div>
+        </div>
       </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><span class="material-symbols-rounded">category</span>Issues by Type</div>
-      ${typeHTML||'<p style="color:var(--md-on-surface-variant)">No data yet.</p>'}
+      <div class="form-section-title"><span class="material-symbols-rounded">donut_large</span>Status Breakdown <span style="font-size:12px;font-weight:400;color:var(--md-on-surface-variant);margin-left:4px">tap to filter</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="an-stat-tile" style="background:var(--crit-container)" onclick="filterAndGo('status','Reported')">
+          <div style="font-size:26px;font-weight:700;color:var(--crit-on);font-family:'Google Sans Display',sans-serif">${reported}</div>
+          <div style="font-size:12px;color:var(--crit-on);margin-top:4px;font-weight:600">Reported</div>
+          <div style="font-size:10px;color:var(--crit-on);opacity:0.7;margin-top:2px">Needs assignment</div>
+        </div>
+        <div class="an-stat-tile" style="background:#F3E8FD" onclick="filterAndGo('status','Assigned')">
+          <div style="font-size:26px;font-weight:700;color:#6200EE;font-family:'Google Sans Display',sans-serif">${assigned}</div>
+          <div style="font-size:12px;color:#6200EE;margin-top:4px;font-weight:600">Assigned</div>
+          <div style="font-size:10px;color:#6200EE;opacity:0.7;margin-top:2px">Work not started</div>
+        </div>
+        <div class="an-stat-tile" style="background:var(--warn-container)" onclick="filterAndGo('status','In Progress')">
+          <div style="font-size:26px;font-weight:700;color:var(--warn-on);font-family:'Google Sans Display',sans-serif">${inprog}</div>
+          <div style="font-size:12px;color:var(--warn-on);margin-top:4px;font-weight:600">In Progress</div>
+          <div style="font-size:10px;color:var(--warn-on);opacity:0.7;margin-top:2px">Work underway</div>
+        </div>
+        <div class="an-stat-tile" style="background:var(--low-container)" onclick="filterAndGo('status','Fixed')">
+          <div style="font-size:26px;font-weight:700;color:var(--low-on);font-family:'Google Sans Display',sans-serif">${fixed}</div>
+          <div style="font-size:12px;color:var(--low-on);margin-top:4px;font-weight:600">Fixed ✅</div>
+          <div style="font-size:10px;color:var(--low-on);opacity:0.7;margin-top:2px">Completed</div>
+        </div>
+      </div>
     </div>
     <div class="form-section">
-      <div class="form-section-title"><span class="material-symbols-rounded">map</span>Issues by Block</div>
-      ${blockHTML||'<p style="color:var(--md-on-surface-variant)">No data yet.</p>'}
+      <div class="form-section-title"><span class="material-symbols-rounded">category</span>By Issue Type <span style="font-size:12px;font-weight:400;color:var(--md-on-surface-variant);margin-left:4px">tap to filter</span></div>
+      ${typeHTML||'<p style="color:var(--md-on-surface-variant);font-size:13px">No data yet.</p>'}
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span class="material-symbols-rounded">map</span>By Block <span style="font-size:12px;font-weight:400;color:var(--md-on-surface-variant);margin-left:4px">tap to filter</span></div>
+      ${blockHTML||'<p style="color:var(--md-on-surface-variant);font-size:13px">No data yet.</p>'}
     </div>`;
 }
 
@@ -1050,13 +1233,101 @@ function openIssue(fsId) {
 }
 function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); }
 
+
+/* ── REPORTS TABLE ────────────────────────────────────────────── */
+let rptSortCol = 'date', rptSortDir = 'desc';
+
+function rptSort(col) {
+  if (rptSortCol === col) rptSortDir = rptSortDir === 'asc' ? 'desc' : 'asc';
+  else { rptSortCol = col; rptSortDir = col === 'date' ? 'desc' : 'asc'; }
+  renderReports();
+}
+
+function renderReports() {
+  const data = allIssues;
+  const fb = document.getElementById('rpt-fblock').value;
+  const fs = document.getElementById('rpt-fstatus').value;
+  const fp = document.getElementById('rpt-fpriority').value;
+  const ft = document.getElementById('rpt-ftype').value;
+
+  let rows = data.filter(r =>
+    (!fb || r.block === fb) &&
+    (!fs || r.status === fs) &&
+    (!fp || r.priority === fp) &&
+    (!ft || r.type === ft)
+  );
+
+  // Sort
+  const priOrder = {Critical:0,High:1,Medium:2,Low:3};
+  rows.sort((a,b) => {
+    let va, vb;
+    if (rptSortCol==='date')     { va=new Date(a.date||0); vb=new Date(b.date||0); }
+    else if(rptSortCol==='school'){ va=(a.school||'').toLowerCase(); vb=(b.school||'').toLowerCase(); }
+    else if(rptSortCol==='type') { va=(a.type||'').toLowerCase(); vb=(b.type||'').toLowerCase(); }
+    else if(rptSortCol==='priority'){ va=priOrder[a.priority]??9; vb=priOrder[b.priority]??9; }
+    else if(rptSortCol==='status'){ va=(a.status||'').toLowerCase(); vb=(b.status||'').toLowerCase(); }
+    else if(rptSortCol==='age')  { va=new Date(a.date||0); vb=new Date(b.date||0); }
+    else if(rptSortCol==='cost') { va=a.cost||0; vb=b.cost||0; }
+    else { va=0; vb=0; }
+    let cmp = va < vb ? -1 : va > vb ? 1 : 0;
+    return rptSortDir === 'asc' ? cmp : -cmp;
+  });
+
+  // Summary cards
+  const tot=rows.length, fx=rows.filter(r=>r.status==='Fixed').length;
+  const crit=rows.filter(r=>r.priority==='Critical'&&r.status!=='Fixed').length;
+  const tc=rows.filter(r=>r.status!=='Fixed').reduce((a,r)=>a+(r.cost||0),0);
+  document.getElementById('rpt-summary').innerHTML=`
+    <div class="rpt-sum-card"><div class="rpt-sum-num" style="color:var(--md-primary)">${tot}</div><div class="rpt-sum-lbl">Total</div></div>
+    <div class="rpt-sum-card"><div class="rpt-sum-num" style="color:var(--md-error)">${crit}</div><div class="rpt-sum-lbl">Critical</div></div>
+    <div class="rpt-sum-card"><div class="rpt-sum-num" style="color:var(--md-secondary)">${fx}</div><div class="rpt-sum-lbl">Fixed</div></div>
+    <div class="rpt-sum-card"><div class="rpt-sum-num" style="color:var(--warn-on)">₹${tc>=100000?(tc/100000).toFixed(1)+'L':tc>=1000?Math.round(tc/1000)+'K':tc}</div><div class="rpt-sum-lbl">Pending Cost</div></div>
+  `;
+  document.getElementById('rpt-count').textContent = rows.length + ' issues';
+
+  // Update sort headers
+  ['date','school','type','priority','status','age','cost'].forEach(c => {
+    const th = document.getElementById('rth-'+c);
+    if (!th) return;
+    th.className = rptSortCol===c ? ('sort-'+rptSortDir) : '';
+  });
+
+  const scClass={Reported:'sc-reported',Assigned:'sc-assigned','In Progress':'sc-inprogress',Fixed:'sc-fixed'};
+  const pcClass={Critical:'pc-critical',High:'pc-high',Medium:'pc-medium',Low:'pc-low'};
+
+  if (!rows.length) {
+    document.getElementById('rpt-tbody').innerHTML =
+      `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--md-on-surface-variant);font-size:14px">No issues match the filters</td></tr>`;
+    return;
+  }
+
+  document.getElementById('rpt-tbody').innerHTML = rows.map((r,i) => {
+    const age = timeLapse(r.date);
+    const dt = r.date ? new Date(r.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
+    const rowClass = r.status==='Fixed' ? 'row-fixed' : 'row-'+(r.priority||'low').toLowerCase();
+    return `<tr class="${rowClass}" onclick="openIssue('${r.fsId}')">
+      <td style="font-size:11px;white-space:nowrap">${dt}</td>
+      <td><div class="rpt-school">${r.school||'—'}</div><div class="rpt-block">📍 ${r.block||'—'}</div></td>
+      <td><span style="font-size:13px">${EMOS[r.type]||'⚠️'}</span> ${r.type||'—'}</td>
+      <td><span class="priority-chip ${pcClass[r.priority]||''}">${r.priority||'—'}</span></td>
+      <td><span class="status-chip ${scClass[r.status]||''}">${r.status||'—'}</span></td>
+      <td><span class="age-chip ${age.cls}" style="font-size:10px;padding:2px 6px">${age.label}</span></td>
+      <td class="rpt-cost">${r.cost?'₹'+Number(r.cost).toLocaleString('en-IN'):'—'}</td>
+      <td style="font-size:11px;color:var(--md-on-surface-variant)">${r.reporter||'—'}<br><span style="color:var(--md-primary)">${r.mobile||''}</span></td>
+    </tr>`;
+  }).join('');
+}
+
 /* ── NAVIGATION & UTILS ───────────────────────────────────────── */
 function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  document.getElementById('nav-'+page).classList.add('active');
+  const navEl = document.getElementById('nav-'+page);
+  if (navEl) navEl.classList.add('active');
   if (page === 'analytics') renderAnalytics();
+  if (page === 'reports')   renderReports();
+  if (page === 'home')      renderHome();
   window.scrollTo(0, 0);
 }
 function setBlock(b) { activeBlock = activeBlock === b ? '' : b; renderHome(); }
